@@ -1,0 +1,7 @@
+{
+  "name": "PhotoMe",
+  "dockerComposeFile": "../docker-compose.yml",
+  "service": "photome",
+  "workspaceFolder": "/workspace",
+  "shutdownAction": "stopCompose"
+}

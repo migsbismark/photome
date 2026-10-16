@@ -1,0 +1,12 @@
+services:
+  photome:
+    build: .
+    working_dir: /workspace
+    volumes:
+      - .:/workspace
+      - claude-config:/root/.claude
+    stdin_open: true
+    tty: true
+
+volumes:
+  claude-config:
