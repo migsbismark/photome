@@ -3,5 +3,12 @@
   "dockerComposeFile": "../docker-compose.yml",
   "service": "photome",
   "workspaceFolder": "/workspace",
-  "shutdownAction": "stopCompose"
+  "shutdownAction": "stopCompose",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "anthropic.claude-code"
+      ]
+    }
+  }
 }

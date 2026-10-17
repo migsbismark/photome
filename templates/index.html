@@ -1,0 +1,552 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PhotoMe | Metadata library</title>
+  <style>
+    :root { color-scheme: light; font-family: system-ui, sans-serif; color: #1d2939; background: #f5f7fa; }
+    body { margin: 0; }
+    main { max-width: 1600px; margin: 0 auto; padding: 40px 24px; }
+    h1 { margin: 0 0 8px; font-size: 2rem; }
+    .muted { color: #667085; }
+    .panel { background: white; border: 1px solid #e4e7ec; border-radius: 10px; padding: 20px; margin: 22px 0; }
+    form { display: flex; gap: 10px; flex-wrap: wrap; }
+    input[type=text] { flex: 1; min-width: 240px; padding: 11px 12px; border: 1px solid #cfd4dc; border-radius: 6px; font: inherit; }
+    button { border: 0; border-radius: 6px; padding: 11px 16px; background: #175cd3; color: white; font: inherit; font-weight: 600; cursor: pointer; }
+    button.secondary { background: #344054; }
+    button:disabled { opacity: .55; cursor: wait; }
+    #message { min-height: 1.5em; margin: 12px 0 0; }
+    .error { color: #b42318; }
+    .success { color: #067647; }
+    .table-wrap { overflow-x: auto; }
+    .scroll-top { overflow-x: auto; overflow-y: hidden; }
+    .scroll-top > div { height: 1px; }
+    table { width: 100%; border-collapse: collapse; background: white; }
+    th.sticky, td.sticky { position: sticky; left: 0; background: white; z-index: 1; box-shadow: 1px 0 0 #eaecf0; }
+    td.tag { max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    th.tag { white-space: nowrap; }
+    tr.filters th { padding: 6px 8px; background: #f9fafb; }
+    tr.filters th.sticky { background: #f9fafb; }
+    tr.filters input, tr.filters select { width: 100%; min-width: 90px; box-sizing: border-box; padding: 5px 7px; font-size: .8rem; font-weight: 400; border: 1px solid #cfd4dc; border-radius: 4px; background: white; }
+    th button.sort { all: unset; cursor: pointer; display: inline-flex; gap: 4px; align-items: baseline; font: inherit; color: inherit; font-weight: 600; white-space: nowrap; }
+    th button.sort:hover, th button.sort:focus-visible { color: #175cd3; }
+    th button.sort .arrow { color: #175cd3; font-size: .75rem; min-width: 1ch; }
+    button.view { padding: 5px 12px; font-size: .85rem; }
+    #viewer { border: 0; border-radius: 10px; padding: 0; max-width: min(96vw, 1400px); width: 96vw; background: #101828; color: white; }
+    #viewer::backdrop { background: rgba(16, 24, 40, .75); }
+    #viewer header { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 16px; }
+    #viewer header .title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
+    #viewer header .actions { display: flex; gap: 8px; align-items: center; flex-shrink: 0; }
+    #viewer a { color: #84caff; font-size: .9rem; }
+    #viewer-stage { display: flex; justify-content: center; align-items: center; min-height: 200px; padding: 0 16px 16px; }
+    #viewer-stage img, #viewer-stage video { max-width: 100%; max-height: 80vh; object-fit: contain; }
+    #viewer-stage .viewer-message { padding: 40px 0; color: #d0d5dd; }
+    th small { display: block; font-weight: 400; color: #98a2b3; }
+    .column-picker { margin: 12px 0; }
+    .column-picker summary { cursor: pointer; font-weight: 600; }
+    .column-picker .actions { display: flex; gap: 8px; margin: 10px 0; }
+    .column-picker .actions button { padding: 6px 12px; }
+    .column-groups { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px; }
+    .column-groups fieldset { border: 1px solid #e4e7ec; border-radius: 6px; margin: 0; padding: 8px 12px; }
+    .column-groups legend { font-weight: 600; font-size: .85rem; color: #475467; }
+    .column-groups label { display: block; font-size: .85rem; padding: 2px 0; }
+    th, td { border-bottom: 1px solid #eaecf0; text-align: left; padding: 12px; vertical-align: top; }
+    th { color: #475467; font-size: .85rem; }
+    td.path { min-width: 250px; overflow-wrap: anywhere; }
+    td.name { min-width: 150px; }
+    td.metadata { min-width: 200px; }
+    pre { max-width: 500px; max-height: 280px; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; background: #f9fafb; padding: 10px; border-radius: 5px; }
+    .badge { display: inline-block; border-radius: 12px; padding: 3px 9px; background: #ecfdf3; color: #067647; font-size: .82rem; }
+    .badge.duplicate { background: #fff1f0; color: #b42318; }
+    .table-heading, .pagination { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+    .pagination { margin-top: 14px; }
+    @media (max-width: 600px) { main { padding: 24px 14px; } .panel { padding: 14px; } }
+  </style>
+</head>
+<body>
+<main>
+  <h1>PhotoMe</h1>
+  <p class="muted">Scan a directory and its subdirectories for image metadata. Paths are read by the app server.</p>
+
+  <section class="panel">
+    <h2>Scan a directory</h2>
+    <form id="scan-form">
+      <input type="text" id="directory" name="directory" placeholder="/path/to/photos" required aria-label="Directory path">
+      <button id="scan-button" type="submit">Scan directory</button>
+    </form>
+    <p id="message" role="status" aria-live="polite"></p>
+  </section>
+
+  <section class="panel">
+    <div class="table-heading">
+      <div>
+        <h2>Metadata records</h2>
+        <p class="muted">All dates are shown as yyyy-mm-dd hh:mm:ss in Pacific time (PST/PDT). Dates without a time zone in the file (such as EXIF ModifyDate) are shown as recorded by the camera. Records include every metadata tag returned by ExifTool. Duplicate matching is based on metadata, excluding filesystem-only tags.</p>
+      </div>
+      <button class="secondary" id="duplicates-button" type="button">Find and flag duplicates</button>
+    </div>
+    <details class="column-picker" id="column-picker">
+      <summary>Columns</summary>
+      <div class="actions">
+        <button class="secondary" id="show-all-columns" type="button">Show all</button>
+        <button class="secondary" id="hide-all-columns" type="button">Hide all tag columns</button>
+        <button class="secondary" id="clear-filters" type="button">Clear filters and sorting</button>
+      </div>
+      <div class="column-groups" id="column-groups"></div>
+    </details>
+    <div class="scroll-top" id="scroll-top" aria-hidden="true"><div id="scroll-top-inner"></div></div>
+    <div class="table-wrap" id="table-wrap">
+      <table id="records-table">
+        <thead id="records-head"></thead>
+        <tbody id="records-body"><tr><td>Loading records…</td></tr></tbody>
+      </table>
+    </div>
+    <div class="pagination">
+      <span id="page-summary" class="muted"></span>
+      <div>
+        <button class="secondary" id="previous-button" type="button">Previous</button>
+        <button class="secondary" id="next-button" type="button">Next</button>
+      </div>
+    </div>
+  </section>
+</main>
+<dialog id="viewer" aria-label="Photo viewer">
+  <header>
+    <span class="title" id="viewer-title"></span>
+    <span class="actions">
+      <a id="viewer-open" target="_blank" rel="noopener">Open original</a>
+      <button class="secondary" id="viewer-close" type="button">Close</button>
+    </span>
+  </header>
+  <div id="viewer-stage"></div>
+</dialog>
+<script>
+  const form = document.querySelector("#scan-form");
+  const scanButton = document.querySelector("#scan-button");
+  const message = document.querySelector("#message");
+  const body = document.querySelector("#records-body");
+  const pageSummary = document.querySelector("#page-summary");
+  const pageSize = 50;
+  let currentPage = 1;
+
+  function showMessage(text, type = "") {
+    message.textContent = text;
+    message.className = type;
+  }
+
+  const head = document.querySelector("#records-head");
+  const columnGroups = document.querySelector("#column-groups");
+  const storageKey = "photome.hiddenColumns";
+  let tagColumns = [];
+  let lastRecords = [];
+  let filters = {};
+  let filterOptions = {};
+  let sort = { key: null, dir: "asc" };
+  let filterTimer = null;
+  let hidden = new Set();
+  try { hidden = new Set(JSON.parse(localStorage.getItem(storageKey) || "[]")); } catch (error) {}
+
+  function saveHidden() {
+    try { localStorage.setItem(storageKey, JSON.stringify([...hidden])); } catch (error) {}
+  }
+
+  function visibleColumns() {
+    return tagColumns.filter(column => !hidden.has(column.key));
+  }
+
+  function buildColumnPicker() {
+    columnGroups.replaceChildren();
+    const groups = new Map();
+    for (const column of tagColumns) {
+      const group = column.tag.split(":")[0];
+      if (!groups.has(group)) groups.set(group, []);
+      groups.get(group).push(column);
+    }
+    for (const [group, columns] of groups) {
+      const fieldset = document.createElement("fieldset");
+      const legend = document.createElement("legend");
+      legend.textContent = group;
+      fieldset.append(legend);
+      for (const column of columns) {
+        const label = document.createElement("label");
+        const box = document.createElement("input");
+        box.type = "checkbox";
+        box.checked = !hidden.has(column.key);
+        box.addEventListener("change", () => {
+          if (box.checked) hidden.delete(column.key); else hidden.add(column.key);
+          saveHidden();
+          renderHead();
+          if (!box.checked && (filters[column.key] !== undefined || sort.key === column.key)) {
+            delete filters[column.key];  // a hidden column must not filter or sort invisibly
+            if (sort.key === column.key) sort = { key: null, dir: "asc" };
+            renderHead();
+            applyFilters();
+          } else {
+            renderBody();
+          }
+        });
+        label.append(box, " ", column.tag.slice(group.length + 1));
+        fieldset.append(label);
+      }
+      columnGroups.append(fieldset);
+    }
+  }
+
+  function filterCell(key, kind) {
+    const th = document.createElement("th");
+    if (!key) return th;
+    if (key === "file_name") th.className = "sticky";
+    let control;
+    const isSelect = kind === "duplicate" || kind === "options";
+    if (isSelect) {
+      control = document.createElement("select");
+      if (kind === "duplicate") {
+        for (const [value, label] of [["", "All"], ["yes", "Duplicate"], ["no", "Not duplicate"]]) {
+          control.add(new Option(label, value));
+        }
+      } else {
+        control.add(new Option("All", ""));
+        const values = filterOptions[key] || [];
+        for (const value of values) control.add(new Option(value, value));
+        if (filters[key] && !values.includes(filters[key])) control.add(new Option(filters[key], filters[key]));
+      }
+    } else {
+      control = document.createElement("input");
+      control.type = "text";
+      control.placeholder = "Filter";
+    }
+    control.value = filters[key] || "";
+    control.setAttribute("aria-label", `Filter ${key}`);
+    control.addEventListener(isSelect ? "change" : "input", () => {
+      if (control.value.trim()) filters[key] = control.value; else delete filters[key];
+      clearTimeout(filterTimer);
+      filterTimer = setTimeout(applyFilters, isSelect ? 0 : 350);
+    });
+    th.append(control);
+    return th;
+  }
+
+  async function applyFilters() {
+    currentPage = 1;
+    try { await loadRecords(); } catch (error) { showMessage(error.message, "error"); }
+  }
+
+  function sortableHeader(title, key, className = "", group = "") {
+    const th = document.createElement("th");
+    if (className) th.className = className;
+    if (!key) {
+      th.textContent = title;
+      return th;
+    }
+    const active = sort.key === key;
+    th.setAttribute("aria-sort", active ? (sort.dir === "asc" ? "ascending" : "descending") : "none");
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "sort";
+    button.title = "Click to sort ascending, again for descending, again to clear";
+    button.append(title);
+    const arrow = document.createElement("span");
+    arrow.className = "arrow";
+    arrow.textContent = active ? (sort.dir === "asc" ? "▲" : "▼") : "";
+    button.append(arrow);
+    button.addEventListener("click", () => {
+      if (sort.key !== key) sort = { key, dir: "asc" };
+      else if (sort.dir === "asc") sort = { key, dir: "desc" };
+      else sort = { key: null, dir: "asc" };
+      renderHead();
+      applyFilters();
+    });
+    th.append(button);
+    if (group) {
+      const small = document.createElement("small");
+      small.textContent = group;
+      th.append(small);
+    }
+    return th;
+  }
+
+  function renderHead() {
+    const columns = visibleColumns();
+    head.replaceChildren();
+    const headerRow = head.insertRow();
+    headerRow.append(
+      sortableHeader("File name", "file_name", "sticky"),
+      sortableHeader("Photo", null),
+      sortableHeader("Path", "file_path"),
+      sortableHeader("Record created", "created_at"),
+      sortableHeader("Duplicate", "duplicate"),
+      sortableHeader("Metadata", null)
+    );
+    for (const column of columns) {
+      const [group, ...rest] = column.tag.split(":");
+      const th = sortableHeader(rest.join(":"), column.key, "tag", group);
+      th.title = column.tag;
+      headerRow.append(th);
+    }
+    const filterRow = head.insertRow();
+    filterRow.className = "filters";
+    filterRow.append(
+      filterCell("file_name"), filterCell(null), filterCell("file_path"), filterCell("created_at"),
+      filterCell("duplicate", "duplicate"), filterCell(null)
+    );
+    for (const column of columns) {
+      filterRow.append(filterCell(column.key, column.key in filterOptions ? "options" : "text"));
+    }
+  }
+
+  function renderTable() {
+    renderBody();
+  }
+
+  function renderBody() {
+    const columns = visibleColumns();
+    const width = 6 + columns.length;
+
+    body.replaceChildren();
+    if (!lastRecords.length) {
+      const row = body.insertRow();
+      const cell = row.insertCell();
+      cell.colSpan = width;
+      cell.textContent = Object.keys(filters).length
+        ? "No records match the current filters."
+        : "No metadata records yet. Scan a directory to get started.";
+      return;
+    }
+    for (const record of lastRecords) {
+      const row = body.insertRow();
+      const name = row.insertCell();
+      name.className = "name sticky";
+      name.textContent = record.file_name;
+
+      const photo = row.insertCell();
+      if (record.preview) {
+        const view = document.createElement("button");
+        view.type = "button";
+        view.className = "view";
+        view.textContent = record.preview === "video" ? "Play" : "View";
+        view.addEventListener("click", () => openViewer(record));
+        photo.append(view);
+      } else {
+        photo.textContent = "–";
+        photo.title = "This file type cannot be previewed";
+      }
+
+      const path = row.insertCell();
+      path.className = "path";
+      path.textContent = record.file_path;
+      row.insertCell().textContent = record.created_at;
+
+      const duplicate = row.insertCell();
+      const badge = document.createElement("span");
+      badge.className = `badge${record.is_duplicate ? " duplicate" : ""}`;
+      badge.textContent = record.is_duplicate ? "Duplicate" : "No";
+      if (record.duplicate_path) badge.title = `Matches ${record.duplicate_path}`;
+      duplicate.append(badge);
+
+      const metadataCell = row.insertCell();
+      metadataCell.className = "metadata";
+      const details = document.createElement("details");
+      const summary = document.createElement("summary");
+      summary.textContent = `View ${Object.keys(record.metadata).length} tags`;
+      const pre = document.createElement("pre");
+      pre.textContent = JSON.stringify(record.metadata, null, 2);
+      details.append(summary, pre);
+      metadataCell.append(details);
+
+      for (const column of columns) {
+        const cell = row.insertCell();
+        cell.className = "tag";
+        const value = record[column.key];
+        if (value !== null && value !== undefined) {
+          cell.textContent = value;
+          cell.title = String(value);
+        }
+      }
+    }
+  }
+
+  // A second horizontal scrollbar above the table, kept in step with the one below it.
+  const scrollTop = document.querySelector("#scroll-top");
+  const scrollTopInner = document.querySelector("#scroll-top-inner");
+  const tableWrap = document.querySelector("#table-wrap");
+  const recordsTable = document.querySelector("#records-table");
+  let syncing = false;
+  function syncScroll(from, to) {
+    if (syncing) return;
+    syncing = true;
+    to.scrollLeft = from.scrollLeft;
+    requestAnimationFrame(() => { syncing = false; });
+  }
+  scrollTop.addEventListener("scroll", () => syncScroll(scrollTop, tableWrap));
+  tableWrap.addEventListener("scroll", () => syncScroll(tableWrap, scrollTop));
+  function updateTopScrollbar() {
+    scrollTopInner.style.width = `${recordsTable.scrollWidth}px`;
+    scrollTop.style.display = recordsTable.scrollWidth > tableWrap.clientWidth ? "" : "none";
+  }
+  if (window.ResizeObserver) {
+    const observer = new ResizeObserver(updateTopScrollbar);
+    observer.observe(recordsTable);
+    observer.observe(tableWrap);
+  } else {
+    window.addEventListener("resize", updateTopScrollbar);
+  }
+
+  const viewer = document.querySelector("#viewer");
+  const viewerStage = document.querySelector("#viewer-stage");
+
+  function openViewer(record) {
+    const url = `/api/records/${record.id}/file`;
+    document.querySelector("#viewer-title").textContent = `${record.file_name} — ${record.file_path}`;
+    document.querySelector("#viewer-open").href = url;
+    const failed = text => {
+      const note = document.createElement("div");
+      note.className = "viewer-message";
+      note.textContent = text;
+      viewerStage.replaceChildren(note);
+    };
+    let media;
+    if (record.preview === "video") {
+      media = document.createElement("video");
+      media.controls = true;
+      media.autoplay = true;
+      media.addEventListener("error", () => failed("This browser cannot play this video. Use “Open original” to download it."));
+    } else {
+      media = document.createElement("img");
+      media.alt = record.file_name;
+      media.addEventListener("error", () => failed("The picture could not be loaded. Its folder may no longer be mounted, or the format could not be converted."));
+    }
+    media.src = url;
+    viewerStage.replaceChildren(media);
+    if (!viewer.open) viewer.showModal();
+  }
+
+  viewer.addEventListener("close", () => viewerStage.replaceChildren());  // stops video playback
+  viewer.addEventListener("click", event => { if (event.target === viewer) viewer.close(); });
+  document.querySelector("#viewer-close").addEventListener("click", () => viewer.close());
+
+  async function loadRecords() {
+    const query = new URLSearchParams({ page: currentPage, page_size: pageSize });
+    for (const [key, value] of Object.entries(filters)) query.set(`filter_${key}`, value);
+    if (sort.key) { query.set("sort", sort.key); query.set("dir", sort.dir); }
+    const response = await fetch(`/api/records?${query}`);
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || "Could not load records.");
+    const optionsChanged = JSON.stringify(data.options) !== JSON.stringify(filterOptions);
+    filterOptions = data.options;
+    if (!tagColumns.length) {
+      tagColumns = data.columns;
+      buildColumnPicker();
+      renderHead();
+    } else if (optionsChanged) {
+      renderHead();  // e.g. new location names after a scan or the startup backfill
+    }
+    lastRecords = data.records;
+    renderTable();
+    const first = data.total ? (currentPage - 1) * pageSize + 1 : 0;
+    const last = Math.min(currentPage * pageSize, data.total);
+    pageSummary.textContent = `${first}–${last} of ${data.total} records`;
+    document.querySelector("#previous-button").disabled = currentPage <= 1;
+    document.querySelector("#next-button").disabled = last >= data.total;
+  }
+
+  document.querySelector("#clear-filters").addEventListener("click", () => {
+    filters = {};
+    sort = { key: null, dir: "asc" };
+    renderHead();
+    applyFilters();
+  });
+  document.querySelector("#show-all-columns").addEventListener("click", () => {
+    hidden.clear();
+    saveHidden();
+    buildColumnPicker();
+    renderHead();
+    renderBody();
+  });
+  document.querySelector("#hide-all-columns").addEventListener("click", () => {
+    hidden = new Set(tagColumns.map(column => column.key));
+    for (const column of tagColumns) delete filters[column.key];
+    if (tagColumns.some(column => column.key === sort.key)) sort = { key: null, dir: "asc" };
+    saveHidden();
+    buildColumnPicker();
+    renderHead();
+    applyFilters();
+  });
+
+  async function monitorScan(jobId) {
+    scanButton.disabled = true;
+    try {
+      while (true) {
+        const response = await fetch(`/api/scans/${jobId}`);
+        const job = await response.json();
+        if (!response.ok) throw new Error(job.error || "Could not read scan progress.");
+        const progress = `${job.processed_files} of ${job.total_files} files checked; ${job.records_added} metadata records added.`;
+        if (job.status === "scanning") {
+          showMessage(`Scanning ${job.directory} — ${progress}`);
+          await new Promise(resolve => setTimeout(resolve, 800));
+          continue;
+        }
+        if (job.status === "failed" || job.status === "completed_with_errors") {
+          showMessage(`${job.status === "failed" ? "Scan failed" : "Scan completed with errors"}: ${job.errors.join(" ") || progress}`, "error");
+        } else {
+          showMessage(`Scan complete. ${progress}`, "success");
+        }
+        break;
+      }
+      currentPage = 1;
+      await loadRecords();
+    } catch (error) {
+      showMessage(error.message, "error");
+    } finally {
+      scanButton.disabled = false;
+    }
+  }
+
+  form.addEventListener("submit", async event => {
+    event.preventDefault();
+    showMessage("Starting scan…");
+    scanButton.disabled = true;
+    try {
+      const response = await fetch("/api/scans", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ directory: document.querySelector("#directory").value })
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Could not start scan.");
+      await monitorScan(data.job_id);
+    } catch (error) {
+      scanButton.disabled = false;
+      showMessage(error.message, "error");
+    }
+  });
+
+  document.querySelector("#duplicates-button").addEventListener("click", async () => {
+    const button = document.querySelector("#duplicates-button");
+    button.disabled = true;
+    try {
+      const response = await fetch("/api/duplicates", { method: "POST" });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Could not flag duplicates.");
+      showMessage(`${data.duplicates_flagged} duplicate records flagged.`, "success");
+      await loadRecords();
+    } catch (error) {
+      showMessage(error.message, "error");
+    } finally {
+      button.disabled = false;
+    }
+  });
+
+  document.querySelector("#previous-button").addEventListener("click", async () => {
+    currentPage = Math.max(1, currentPage - 1);
+    try { await loadRecords(); } catch (error) { showMessage(error.message, "error"); }
+  });
+  document.querySelector("#next-button").addEventListener("click", async () => {
+    currentPage += 1;
+    try { await loadRecords(); } catch (error) { showMessage(error.message, "error"); }
+  });
+
+  loadRecords().catch(error => showMessage(error.message, "error"));
+</script>
+</body>
+</html>

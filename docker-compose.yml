@@ -2,11 +2,20 @@ services:
   photome:
     build: .
     working_dir: /workspace
+    command: ["python", "app.py"]
+    ports:
+      - "127.0.0.1:5000:5000"
+    environment:
+      HOST: 0.0.0.0
+      PHOTOME_DATABASE_PATH: /data/photome.sqlite3
     volumes:
       - .:/workspace
       - claude-config:/root/.claude
+      - photome-data:/data
+      - ${PHOTO_LIBRARY:-./photos}:/photos:ro
     stdin_open: true
     tty: true
 
 volumes:
   claude-config:
+  photome-data:
