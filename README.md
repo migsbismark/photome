@@ -194,7 +194,8 @@ are sent over the network.** The result is stored in the columns
   the photos is needed). This runs in the background, one lookup per distinct
   coordinate, and took about 85 seconds for 435 distinct positions; the
   location columns fill in while the page is already usable. Backfilled records
-  do not get the extra Geolocation tags in `metadata_json`.
+  do not get the extra Geolocation tags in `metadata_json`. Records that have a
+  city but no country (an incomplete lookup) are looked up again the same way.
 
 ## Common metadata tags
 
@@ -232,10 +233,10 @@ step with the one below the table, so you do not have to scroll down to reach it
 
 Each column except Photo and Metadata has a filter box under its heading. Text
 filters match anywhere in the value and ignore case (`2026-09` matches any date
-in September 2026). The Duplicate filter and the four location columns (City,
-Region, Country, CountryCode) are drop-downs. Location drop-downs list the
-values found in your records and match exactly, so choosing `Salt` does not also
-match `Salt Lake City`. Filters combine with AND and apply to all records, not
+in September 2026). The Duplicate filter, the File type column (`File:FileType`, such as HEIC, MOV
+or JPEG) and the four location columns (City, Region, Country, CountryCode) are
+drop-downs. The drop-downs list the values found in your records and match
+exactly, so choosing `Salt` does not also match `Salt Lake City`. Filters combine with AND and apply to all records, not
 just the current page. Hiding a column also removes its filter, and
 **Clear filters and sorting** resets everything.
 
@@ -247,6 +248,60 @@ applies to all records, not just the current page. Text sorts ignoring case,
 numbers sort numerically, and records with no value for the column always come
 last. Without a sort, records are listed newest first. Record created sorts by
 the real (UTC) time, so it stays correct across daylight-saving changes.
+
+### Scanning
+
+Enter a directory path and choose **Scan directory**. The progress line shows
+what the scan is doing:
+
+1. **Listing files…** counts the files found so far. Listing is fast; a library
+   of about 358,000 files on a Windows-drive mount lists in a few seconds.
+2. **N of M files checked** while ExifTool reads the files, 100 at a time.
+   Records appear in the table as each batch finishes. Reading is the slow part
+   and depends mostly on the drive. On a Windows-drive mount about 0.13 seconds
+   per file was measured for a mix of photos and videos, so a library of
+   358,000 files takes roughly 13 hours.
+
+Things to know:
+
+- **Already-scanned files are skipped.** A scan only reads files whose path is
+  not yet in the database, so an interrupted or cancelled scan continues where
+  it stopped and re-scanning a folder does not add duplicate records. The
+  progress line says how many were skipped. Tick **Re-read files already in the
+  database** to read everything again (this adds new records for them). Files
+  that had no metadata are never saved, so they are read again on every scan.
+- **Cancel scan** appears while a scan runs. It stops after the batch ExifTool
+  is reading (up to about 30 seconds); records already read are kept.
+- **One scan at a time.** Starting a second scan while one is running is refused.
+- **Closing or reloading the page does not stop a scan**; the page picks up the
+  progress again when you reopen it. Restarting the app does stop it, and the
+  scan is then shown as *interrupted*. Scan again to continue.
+
+### Grouping
+
+Use **Group by** above the table to split the records into collapsible
+sections:
+
+| Group by | Levels | Group labels |
+|---|---|---|
+| Location | Country (default), Region, City | `United States › Utah › Springdale` |
+| Modify date (EXIF) | Year, Month (default), Day | `2025-11` |
+
+- Click a group heading (or press Enter on it) to open or close it. Rows are
+  loaded when a group is opened, 50 at a time, with a **Show more** button for
+  larger groups, so grouping stays fast on big libraries. **Collapse all**
+  closes every group.
+- Location groups keep their parents, so `Springdale` in Utah and `Springdale`
+  in Ohio are separate groups. Locations are listed alphabetically; dates are
+  listed newest first.
+- Records with no location, or with no valid EXIF `ModifyDate` (missing or
+  `0000:00:00 00:00:00`), are collected in a **No location** / **No date** group
+  at the end.
+- The date used is `IFD0:ModifyDate`, the camera's own wall-clock time, which
+  about half the records have. It is not the file system's modified time.
+- Filters narrow the groups and their counts, and sorting applies inside each
+  group. Changing a filter, sort or grouping closes all groups. Choose **None**
+  to return to the normal paged table.
 
 ### Viewing photos and videos
 
@@ -272,9 +327,15 @@ button or a click outside the viewer closes it.
 - All regular files under the chosen directory are checked; records are created
   for files with metadata tags. Directories and symlinks are not followed.
 - Metadata is retained as JSON with all tags returned by ExifTool, including
-  unknown and duplicate tags. Filesystem path and name are stored separately.
+  unknown and duplicate tags. ExifTool's `-ee` option (embedded timed metadata
+  inside videos, such as iPhone Live Photo timing and face-detection tracks) is
+  not used: it roughly doubled scan time and no column uses it. Filesystem path and name are stored separately.
 - Duplicate matching uses an exact hash of metadata tags, excluding filesystem
-  and ExifTool-generated tags. Different images with identical metadata can
+  and ExifTool-generated tags and the video timing/face tracks and Portrait-mode depth
+  data listed in `EMBEDDED_TRACK_TAGS` and `EMBEDDED_XMP_GROUPS` in `app.py` (so a video matches its copy whether or not
+  it was scanned with `-ee`). When these rules change, stored hashes are
+  recomputed once at startup from the saved metadata; press **Find and flag
+  duplicates** again afterwards. Different images with identical metadata can
   therefore match; review the file paths before treating a match as a true
   duplicate.
 - Re-scanning adds new records rather than replacing earlier scan records.

@@ -11,15 +11,18 @@
     h1 { margin: 0 0 8px; font-size: 2rem; }
     .muted { color: #667085; }
     .panel { background: white; border: 1px solid #e4e7ec; border-radius: 10px; padding: 20px; margin: 22px 0; }
-    form { display: flex; gap: 10px; flex-wrap: wrap; }
+    form { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+    form label.check { display: inline-flex; align-items: center; gap: 6px; font-size: .9rem; color: #475467; }
     input[type=text] { flex: 1; min-width: 240px; padding: 11px 12px; border: 1px solid #cfd4dc; border-radius: 6px; font: inherit; }
     button { border: 0; border-radius: 6px; padding: 11px 16px; background: #175cd3; color: white; font: inherit; font-weight: 600; cursor: pointer; }
     button.secondary { background: #344054; }
     button:disabled { opacity: .55; cursor: wait; }
     #message { min-height: 1.5em; margin: 12px 0 0; }
+    #scan-progress { width: 100%; height: 14px; margin-top: 14px; accent-color: #175cd3; }
     .error { color: #b42318; }
     .success { color: #067647; }
     .table-wrap { overflow-x: auto; }
+    [hidden] { display: none !important; }
     .scroll-top { overflow-x: auto; overflow-y: hidden; }
     .scroll-top > div { height: 1px; }
     table { width: 100%; border-collapse: collapse; background: white; }
@@ -42,6 +45,15 @@
     #viewer-stage { display: flex; justify-content: center; align-items: center; min-height: 200px; padding: 0 16px 16px; }
     #viewer-stage img, #viewer-stage video { max-width: 100%; max-height: 80vh; object-fit: contain; }
     #viewer-stage .viewer-message { padding: 40px 0; color: #d0d5dd; }
+    .grouping { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin: 12px 0; }
+    .grouping label { display: inline-flex; align-items: center; gap: 6px; font-weight: 600; font-size: .9rem; }
+    .grouping select { padding: 6px 8px; border: 1px solid #cfd4dc; border-radius: 6px; font: inherit; font-weight: 400; background: white; }
+    .grouping .actions button { padding: 6px 12px; }
+    tr.group-row td { background: #eef4ff; border-top: 1px solid #c7d7fe; cursor: pointer; font-weight: 600; padding: 10px 12px; }
+    tr.group-row:hover td, tr.group-row:focus-visible td { background: #dde8ff; outline: none; }
+    tr.group-row .group-label { position: sticky; left: 12px; display: inline-flex; align-items: baseline; gap: 8px; }
+    tr.group-row .count { font-weight: 400; color: #475467; }
+    tr.group-more td { background: #f9fafb; text-align: center; }
     th small { display: block; font-weight: 400; color: #98a2b3; }
     .column-picker { margin: 12px 0; }
     .column-picker summary { cursor: pointer; font-weight: 600; }
@@ -74,7 +86,10 @@
     <form id="scan-form">
       <input type="text" id="directory" name="directory" placeholder="/path/to/photos" required aria-label="Directory path">
       <button id="scan-button" type="submit">Scan directory</button>
+      <button id="cancel-button" class="secondary" type="button" hidden>Cancel scan</button>
+      <label class="check"><input type="checkbox" id="rescan"> Re-read files already in the database</label>
     </form>
+    <progress id="scan-progress" hidden max="100" aria-label="Scan progress"></progress>
     <p id="message" role="status" aria-live="polite"></p>
   </section>
 
@@ -85,6 +100,19 @@
         <p class="muted">All dates are shown as yyyy-mm-dd hh:mm:ss in Pacific time (PST/PDT). Dates without a time zone in the file (such as EXIF ModifyDate) are shown as recorded by the camera. Records include every metadata tag returned by ExifTool. Duplicate matching is based on metadata, excluding filesystem-only tags.</p>
       </div>
       <button class="secondary" id="duplicates-button" type="button">Find and flag duplicates</button>
+    </div>
+    <div class="grouping">
+      <label>Group by
+        <select id="group-by" aria-label="Group by">
+          <option value="">None</option>
+          <option value="location">Location</option>
+          <option value="date">Modify date (EXIF)</option>
+        </select>
+      </label>
+      <label id="group-level-label" hidden>Level
+        <select id="group-level" aria-label="Grouping level"></select>
+      </label>
+      <span class="actions"><button class="secondary" id="collapse-groups" type="button" hidden>Collapse all</button></span>
     </div>
     <details class="column-picker" id="column-picker">
       <summary>Columns</summary>
@@ -143,6 +171,13 @@
   let filters = {};
   let filterOptions = {};
   let sort = { key: null, dir: "asc" };
+  let grouping = { by: "", level: "" };
+  let groupList = [];
+  const groupLevels = {
+    location: [["country", "Country"], ["region", "Region"], ["city", "City"]],
+    date: [["year", "Year"], ["month", "Month"], ["day", "Day"]],
+  };
+  const defaultLevel = { location: "country", date: "month" };
   let filterTimer = null;
   let hidden = new Set();
   try { hidden = new Set(JSON.parse(localStorage.getItem(storageKey) || "[]")); } catch (error) {}
@@ -299,72 +334,197 @@
     renderBody();
   }
 
-  function renderBody() {
-    const columns = visibleColumns();
-    const width = 6 + columns.length;
+  function buildRecordRow(record, columns) {
+    const row = document.createElement("tr");
+    const name = row.insertCell();
+    name.className = "name sticky";
+    name.textContent = record.file_name;
 
+    const photo = row.insertCell();
+    if (record.preview) {
+      const view = document.createElement("button");
+      view.type = "button";
+      view.className = "view";
+      view.textContent = record.preview === "video" ? "Play" : "View";
+      view.addEventListener("click", () => openViewer(record));
+      photo.append(view);
+    } else {
+      photo.textContent = "–";
+      photo.title = "This file type cannot be previewed";
+    }
+
+    const path = row.insertCell();
+    path.className = "path";
+    path.textContent = record.file_path;
+    row.insertCell().textContent = record.created_at;
+
+    const duplicate = row.insertCell();
+    const badge = document.createElement("span");
+    badge.className = `badge${record.is_duplicate ? " duplicate" : ""}`;
+    badge.textContent = record.is_duplicate ? "Duplicate" : "No";
+    if (record.duplicate_path) badge.title = `Matches ${record.duplicate_path}`;
+    duplicate.append(badge);
+
+    const metadataCell = row.insertCell();
+    metadataCell.className = "metadata";
+    const details = document.createElement("details");
+    const summary = document.createElement("summary");
+    summary.textContent = `View ${Object.keys(record.metadata).length} tags`;
+    const pre = document.createElement("pre");
+    pre.textContent = JSON.stringify(record.metadata, null, 2);
+    details.append(summary, pre);
+    metadataCell.append(details);
+
+    for (const column of columns) {
+      const cell = row.insertCell();
+      cell.className = "tag";
+      const value = record[column.key];
+      if (value !== null && value !== undefined) {
+        cell.textContent = value;
+        cell.title = String(value);
+      }
+    }
+    return row;
+  }
+
+  function emptyMessage() {
+    return Object.keys(filters).length
+      ? "No records match the current filters."
+      : "No metadata records yet. Scan a directory to get started.";
+  }
+
+  function renderBody() {
+    if (grouping.by) return renderGroups();
+    const columns = visibleColumns();
     body.replaceChildren();
     if (!lastRecords.length) {
       const row = body.insertRow();
       const cell = row.insertCell();
-      cell.colSpan = width;
-      cell.textContent = Object.keys(filters).length
-        ? "No records match the current filters."
-        : "No metadata records yet. Scan a directory to get started.";
+      cell.colSpan = 6 + columns.length;
+      cell.textContent = emptyMessage();
       return;
     }
-    for (const record of lastRecords) {
+    for (const record of lastRecords) body.append(buildRecordRow(record, columns));
+  }
+
+  // ---- grouping: collapsible sections whose rows are fetched when opened
+  function renderGroups() {
+    const columns = visibleColumns();
+    const width = 6 + columns.length;
+    body.replaceChildren();
+    if (!groupList.length) {
       const row = body.insertRow();
-      const name = row.insertCell();
-      name.className = "name sticky";
-      name.textContent = record.file_name;
-
-      const photo = row.insertCell();
-      if (record.preview) {
-        const view = document.createElement("button");
-        view.type = "button";
-        view.className = "view";
-        view.textContent = record.preview === "video" ? "Play" : "View";
-        view.addEventListener("click", () => openViewer(record));
-        photo.append(view);
-      } else {
-        photo.textContent = "–";
-        photo.title = "This file type cannot be previewed";
-      }
-
-      const path = row.insertCell();
-      path.className = "path";
-      path.textContent = record.file_path;
-      row.insertCell().textContent = record.created_at;
-
-      const duplicate = row.insertCell();
-      const badge = document.createElement("span");
-      badge.className = `badge${record.is_duplicate ? " duplicate" : ""}`;
-      badge.textContent = record.is_duplicate ? "Duplicate" : "No";
-      if (record.duplicate_path) badge.title = `Matches ${record.duplicate_path}`;
-      duplicate.append(badge);
-
-      const metadataCell = row.insertCell();
-      metadataCell.className = "metadata";
-      const details = document.createElement("details");
-      const summary = document.createElement("summary");
-      summary.textContent = `View ${Object.keys(record.metadata).length} tags`;
-      const pre = document.createElement("pre");
-      pre.textContent = JSON.stringify(record.metadata, null, 2);
-      details.append(summary, pre);
-      metadataCell.append(details);
-
-      for (const column of columns) {
-        const cell = row.insertCell();
-        cell.className = "tag";
-        const value = record[column.key];
-        if (value !== null && value !== undefined) {
-          cell.textContent = value;
-          cell.title = String(value);
+      const cell = row.insertCell();
+      cell.colSpan = width;
+      cell.textContent = emptyMessage();
+      return;
+    }
+    for (const group of groupList) {
+      const header = body.insertRow();
+      header.className = "group-row";
+      header.tabIndex = 0;
+      header.setAttribute("role", "button");
+      header.setAttribute("aria-expanded", String(group.expanded));
+      const cell = header.insertCell();
+      cell.colSpan = width;
+      const label = document.createElement("span");
+      label.className = "group-label";
+      const count = document.createElement("span");
+      count.className = "count";
+      count.textContent = `${group.count} ${group.count === 1 ? "record" : "records"}`;
+      label.append(`${group.expanded ? "▼" : "▶"} ${group.label}`, count);
+      cell.append(label);
+      const toggle = () => toggleGroup(group);
+      header.addEventListener("click", toggle);
+      header.addEventListener("keydown", event => {
+        if (event.key === "Enter" || event.key === " ") { event.preventDefault(); toggle(); }
+      });
+      if (!group.expanded) continue;
+      for (const record of group.records) body.append(buildRecordRow(record, columns));
+      const remaining = group.count - group.records.length;
+      if (group.loading || remaining > 0) {
+        const more = body.insertRow();
+        more.className = "group-more";
+        const moreCell = more.insertCell();
+        moreCell.colSpan = width;
+        if (group.loading) {
+          moreCell.textContent = "Loading…";
+        } else {
+          const button = document.createElement("button");
+          button.type = "button";
+          button.className = "secondary";
+          button.textContent = `Show ${Math.min(pageSize, remaining)} more (${remaining} left)`;
+          button.addEventListener("click", () => loadGroupPage(group));
+          moreCell.append(button);
         }
       }
     }
   }
+
+  async function toggleGroup(group) {
+    group.expanded = !group.expanded;
+    renderGroups();
+    if (group.expanded && !group.records.length) await loadGroupPage(group);
+  }
+
+  async function loadGroupPage(group) {
+    group.loading = true;
+    renderGroups();
+    try {
+      const query = filterQuery({
+        page: group.page + 1,
+        page_size: pageSize,
+        group_by: grouping.by,
+        group_level: grouping.level,
+        group_key: group.key,
+      });
+      const response = await fetch(`/api/records?${query}`);
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Could not load the group.");
+      group.records.push(...data.records);
+      group.page += 1;
+    } catch (error) {
+      showMessage(error.message, "error");
+    } finally {
+      group.loading = false;
+      renderGroups();
+    }
+  }
+
+  async function loadGroups() {
+    const query = new URLSearchParams({ group_by: grouping.by, group_level: grouping.level });
+    for (const [key, value] of Object.entries(filters)) query.set(`filter_${key}`, value);
+    const response = await fetch(`/api/groups?${query}`);
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || "Could not load groups.");
+    groupList = data.groups.map(group => ({ ...group, expanded: false, records: [], page: 0, loading: false }));
+    renderGroups();
+    pageSummary.textContent = `${groupList.length} ${groupList.length === 1 ? "group" : "groups"}, ${data.total} records`;
+  }
+
+  function updateGroupingControls() {
+    const levelSelect = document.querySelector("#group-level");
+    levelSelect.replaceChildren();
+    for (const [value, label] of groupLevels[grouping.by] || []) levelSelect.add(new Option(label, value));
+    levelSelect.value = grouping.level;
+    document.querySelector("#group-level-label").hidden = !grouping.by;
+    document.querySelector("#collapse-groups").hidden = !grouping.by;
+    document.querySelector(".pagination").hidden = Boolean(grouping.by);
+  }
+
+  document.querySelector("#group-by").addEventListener("change", event => {
+    grouping = { by: event.target.value, level: defaultLevel[event.target.value] || "" };
+    updateGroupingControls();
+    applyFilters();
+  });
+  document.querySelector("#group-level").addEventListener("change", event => {
+    grouping.level = event.target.value;
+    applyFilters();
+  });
+  document.querySelector("#collapse-groups").addEventListener("click", () => {
+    for (const group of groupList) group.expanded = false;
+    renderGroups();
+  });
 
   // A second horizontal scrollbar above the table, kept in step with the one below it.
   const scrollTop = document.querySelector("#scroll-top");
@@ -425,10 +585,16 @@
   viewer.addEventListener("click", event => { if (event.target === viewer) viewer.close(); });
   document.querySelector("#viewer-close").addEventListener("click", () => viewer.close());
 
-  async function loadRecords() {
-    const query = new URLSearchParams({ page: currentPage, page_size: pageSize });
+  function filterQuery(params) {
+    const query = new URLSearchParams(params);
     for (const [key, value] of Object.entries(filters)) query.set(`filter_${key}`, value);
     if (sort.key) { query.set("sort", sort.key); query.set("dir", sort.dir); }
+    return query;
+  }
+
+  async function loadRecords() {
+    if (grouping.by && tagColumns.length) return loadGroups();
+    const query = filterQuery({ page: currentPage, page_size: pageSize });
     const response = await fetch(`/api/records?${query}`);
     const data = await response.json();
     if (!response.ok) throw new Error(data.error || "Could not load records.");
@@ -473,23 +639,61 @@
     applyFilters();
   });
 
+  const cancelButton = document.querySelector("#cancel-button");
+  let activeJobId = null;
+  let cancelling = false;
+
+  const progressBar = document.querySelector("#scan-progress");
+
+  function updateProgressBar(job) {
+    if (job.status !== "scanning") { progressBar.hidden = true; return; }
+    progressBar.hidden = false;
+    if (job.phase === "listing" || !job.total_files) {
+      progressBar.removeAttribute("value");  // no total known yet: animated, indeterminate bar
+    } else {
+      progressBar.max = job.total_files;
+      progressBar.value = job.processed_files;
+    }
+  }
+
+  function scanProgress(job) {
+    if (job.phase !== "listing" && job.total_files) {
+      const percent = Math.floor((100 * job.processed_files) / job.total_files);
+      return `${percent}% — ${job.processed_files} of ${job.total_files} files checked${job.skipped_files ? `; ${job.skipped_files} already in the database skipped` : ""}; ${job.records_added} metadata records added`;
+    }
+    if (job.phase === "listing") return `listing files… ${job.total_files} found so far`;
+    const skipped = job.skipped_files ? `; ${job.skipped_files} already in the database skipped` : "";
+    return `${job.processed_files} of ${job.total_files} files checked${skipped}; ${job.records_added} metadata records added`;
+  }
+
   async function monitorScan(jobId) {
+    activeJobId = jobId;
+    cancelling = false;
     scanButton.disabled = true;
+    cancelButton.hidden = false;
+    cancelButton.disabled = false;
     try {
       while (true) {
         const response = await fetch(`/api/scans/${jobId}`);
         const job = await response.json();
         if (!response.ok) throw new Error(job.error || "Could not read scan progress.");
-        const progress = `${job.processed_files} of ${job.total_files} files checked; ${job.records_added} metadata records added.`;
+        updateProgressBar(job);
         if (job.status === "scanning") {
-          showMessage(`Scanning ${job.directory} — ${progress}`);
-          await new Promise(resolve => setTimeout(resolve, 800));
+          showMessage(cancelling
+            ? `Cancelling — finishing the batch being read (up to about 30 seconds); ${scanProgress(job)}.`
+            : `Scanning ${job.directory} — ${scanProgress(job)}.`);
+          await new Promise(resolve => setTimeout(resolve, 1000));
           continue;
         }
+        const progress = scanProgress(job);
         if (job.status === "failed" || job.status === "completed_with_errors") {
-          showMessage(`${job.status === "failed" ? "Scan failed" : "Scan completed with errors"}: ${job.errors.join(" ") || progress}`, "error");
+          showMessage(`${job.status === "failed" ? "Scan failed" : "Scan completed with errors"}: ${job.errors.join(" ") || progress}.`, "error");
+        } else if (job.status === "cancelled") {
+          showMessage(`Scan cancelled — ${progress}. Records already read were kept; scan again to continue where it stopped.`, "error");
+        } else if (job.status === "interrupted") {
+          showMessage(`Scan interrupted because the app restarted — ${progress}. Scan again to continue where it stopped.`, "error");
         } else {
-          showMessage(`Scan complete. ${progress}`, "success");
+          showMessage(`Scan complete — ${progress}.`, "success");
         }
         break;
       }
@@ -498,7 +702,10 @@
     } catch (error) {
       showMessage(error.message, "error");
     } finally {
+      activeJobId = null;
       scanButton.disabled = false;
+      cancelButton.hidden = true;
+      progressBar.hidden = true;
     }
   }
 
@@ -510,7 +717,10 @@
       const response = await fetch("/api/scans", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ directory: document.querySelector("#directory").value })
+        body: JSON.stringify({
+          directory: document.querySelector("#directory").value,
+          rescan: document.querySelector("#rescan").checked
+        })
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "Could not start scan.");
@@ -520,6 +730,26 @@
       showMessage(error.message, "error");
     }
   });
+
+  cancelButton.addEventListener("click", async () => {
+    if (activeJobId === null) return;
+    cancelButton.disabled = true;
+    cancelling = true;
+    showMessage("Cancelling — finishing the batch being read (up to about 30 seconds).");
+    try {
+      const response = await fetch(`/api/scans/${activeJobId}/cancel`, { method: "POST" });
+      if (!response.ok) throw new Error((await response.json()).error || "Could not cancel the scan.");
+    } catch (error) {
+      cancelling = false;
+      cancelButton.disabled = false;
+      showMessage(error.message, "error");
+    }
+  });
+
+  // A scan keeps running on the server when the page is closed; pick it up again on load.
+  fetch("/api/scans/latest").then(r => r.json()).then(data => {
+    if (data.job && data.job.status === "scanning") monitorScan(data.job.id);
+  }).catch(() => {});
 
   document.querySelector("#duplicates-button").addEventListener("click", async () => {
     const button = document.querySelector("#duplicates-button");

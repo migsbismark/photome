@@ -1,12 +1,21 @@
+import atexit
 import json
+import os
+import shutil
 import sqlite3
 import tempfile
 import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-import app as photome
-import tag_columns
+# Importing app creates the module-level app, which opens PHOTOME_DATABASE_PATH. Point
+# it at a throwaway file first so running the tests never touches a real database.
+_scratch = tempfile.mkdtemp(prefix="photome-tests-")
+atexit.register(shutil.rmtree, _scratch, ignore_errors=True)
+os.environ["PHOTOME_DATABASE_PATH"] = str(Path(_scratch) / "import-time.sqlite3")
+
+import app as photome  # noqa: E402
+import tag_columns  # noqa: E402
 
 
 class MetadataFingerprintTests(unittest.TestCase):
@@ -34,6 +43,24 @@ class MetadataFingerprintTests(unittest.TestCase):
             photome.metadata_fingerprint(different),
         )
         self.assertIsNone(photome.metadata_fingerprint({"File:FileName": "only.jpg"}))
+
+
+class EmbeddedTrackFingerprintTests(unittest.TestCase):
+    def test_live_photo_timing_tracks_do_not_change_a_videos_fingerprint(self):
+        video = {"QuickTime:MajorBrand": "qt  ", "Track1:TrackDuration": 3.2}
+        with_ee = {
+            **video,
+            "Track3:SampleTime": 0,
+            "Track3:SampleDuration": 0.03,
+            "Track4:StillImageTime": -1,
+            "Track5:VideoOrientation": 1,
+        }
+        self.assertEqual(photome.metadata_fingerprint(video), photome.metadata_fingerprint(with_ee))
+        # other track tags still count
+        self.assertNotEqual(
+            photome.metadata_fingerprint(video),
+            photome.metadata_fingerprint({**video, "Track1:TrackDuration": 9.9}),
+        )
 
 
 class AppTests(unittest.TestCase):
@@ -240,6 +267,17 @@ class AppTests(unittest.TestCase):
         self.assertEqual(data["options"]["ExifTool_GeolocationCountry"], ["Canada", "United States"])
         self.assertEqual(data["options"]["ExifTool_GeolocationCity"], ["Banff", "Salt", "Salt Lake City"])
 
+    def test_file_type_filter_is_an_exact_drop_down(self):
+        self._insert_record("a.heic", File_FileType="HEIC")
+        self._insert_record("b.mov", File_FileType="MOV")
+        self._insert_record("c.mp4", File_FileType="MP4")
+        self._insert_record("d.x")
+        data = self.client.get("/api/records", query_string={"filter_File_FileType": "MO"}).get_json()
+        self.assertEqual(data["total"], 0)  # exact match, not "contains"
+        data = self.client.get("/api/records", query_string={"filter_File_FileType": "MOV"}).get_json()
+        self.assertEqual([r["file_name"] for r in data["records"]], ["b.mov"])
+        self.assertEqual(data["options"]["File_FileType"], ["HEIC", "MOV", "MP4"])
+
     def test_record_file_is_served_or_converted_for_viewing(self):
         jpeg = self.root / "photo.jpg"
         jpeg.write_bytes(b"\xff\xd8\xff fake jpeg data")
@@ -270,6 +308,234 @@ class AppTests(unittest.TestCase):
         self.assertEqual((response.status_code, response.mimetype), (200, "image/jpeg"))
         converted = photome.Image.open(__import__("io").BytesIO(response.data))
         self.assertEqual(max(converted.size), photome.PREVIEW_MAX_SIZE)
+
+    def _scan_with(self, output_by_path, rescan=False, job_id=None):
+        """Run a scan where fake ExifTool returns metadata for the files it is asked about."""
+        def fake_run(command, **kwargs):
+            names = command[command.index("--") + 1 :]
+            fake_run.asked.extend(names)
+            documents = [dict(SourceFile=n, **output_by_path[n]) for n in names if n in output_by_path]
+            return photome.subprocess.CompletedProcess([], 0, json.dumps(documents), "")
+        fake_run.asked = []
+        with patch.object(photome.subprocess, "run", side_effect=fake_run):
+            job_id = job_id or self._create_job()
+            photome._scan_directory(self.app, job_id, self.scan_root, rescan)
+        return job_id, fake_run.asked
+
+    def test_list_files_skips_symlinks_and_stops_when_asked(self):
+        (self.scan_root / "sub").mkdir()
+        real = self.scan_root / "sub" / "a.jpg"
+        real.touch()
+        (self.scan_root / "b.jpg").touch()
+        (self.scan_root / "link.jpg").symlink_to(real)
+        (self.scan_root / "linked_dir").symlink_to(self.scan_root / "sub")
+        errors = []
+        found = sorted(photome.list_files(self.scan_root.resolve(), errors.append, lambda: False))
+        self.assertEqual(found, sorted([str(real.resolve()), str((self.scan_root / "b.jpg").resolve())]))
+        self.assertEqual(errors, [])
+        self.assertEqual(list(photome.list_files(self.scan_root.resolve(), errors.append, lambda: True)), [])
+
+    def test_rescans_skip_files_already_in_the_database_unless_asked(self):
+        first, second = self.scan_root / "first.jpg", self.scan_root / "second.jpg"
+        first.touch()
+        second.touch()
+        metadata = {str(first): {"EXIF:Make": "A"}, str(second): {"EXIF:Make": "B"}}
+        job_id, asked = self._scan_with(metadata)
+        self.assertEqual(sorted(asked), sorted([str(first), str(second)]))
+
+        third = self.scan_root / "third.jpg"
+        third.touch()
+        metadata[str(third)] = {"EXIF:Make": "C"}
+        job_id, asked = self._scan_with(metadata)
+        self.assertEqual(asked, [str(third)])  # only the new file is read
+        job = self.client.get(f"/api/scans/{job_id}").get_json()
+        self.assertEqual((job["status"], job["total_files"], job["skipped_files"], job["processed_files"], job["records_added"]),
+                         ("completed", 3, 2, 3, 1))
+        self.assertEqual(self.client.get("/api/records").get_json()["total"], 3)
+
+        job_id, asked = self._scan_with(metadata, rescan=True)
+        self.assertEqual(len(asked), 3)  # asked to re-read everything
+        self.assertEqual(self.client.get("/api/records").get_json()["total"], 6)
+
+    def test_portrait_depth_xmp_groups_do_not_change_a_fingerprint(self):
+        photo = {"EXIF:Make": "Example", "XMP-dc:Title": "Beach"}
+        with_depth = {**photo, "XMP-depthData:PixelSize": "1,1", "XMP-apdi:StoredFormat": "x"}
+        self.assertEqual(photome.metadata_fingerprint(photo), photome.metadata_fingerprint(with_depth))
+        self.assertNotEqual(
+            photome.metadata_fingerprint(photo),
+            photome.metadata_fingerprint({**photo, "XMP-dc:Title": "Other"}),
+        )
+
+    def test_backfill_repairs_a_record_with_a_city_but_no_country(self):
+        self._insert_record(
+            "a.jpg", Composite_GPSLatitude=35.39, Composite_GPSLongitude=-115.83,
+            ExifTool_GeolocationCity="Wrong", ExifTool_GeolocationCountryCode="US",
+        )
+        output = json.dumps([{"ExifTool:GeolocationCity": "Sandy Valley", "ExifTool:GeolocationRegion": "Nevada",
+                              "ExifTool:GeolocationCountry": "United States", "ExifTool:GeolocationCountryCode": "US"}])
+        with patch.object(photome.subprocess, "run",
+                          return_value=photome.subprocess.CompletedProcess([], 0, output, "")):
+            photome.backfill_geolocation(self.app)
+        record = self.client.get("/api/records").get_json()["records"][0]
+        self.assertEqual(
+            [record["ExifTool_GeolocationCity"], record["ExifTool_GeolocationRegion"], record["ExifTool_GeolocationCountry"]],
+            ["Sandy Valley", "Nevada", "United States"],
+        )
+
+    def test_scan_does_not_use_the_slow_embedded_extraction_option(self):
+        (self.scan_root / "a.jpg").touch()
+        with patch.object(
+            photome.subprocess, "run",
+            return_value=photome.subprocess.CompletedProcess([], 0, "[]", ""),
+        ) as run:
+            photome._scan_directory(self.app, self._create_job(), self.scan_root)
+        command = run.call_args.args[0]
+        self.assertNotIn("-ee", command)
+        self.assertIn("-a", command)  # duplicate and unknown tags are still kept
+        self.assertIn("-u", command)
+
+    def test_stored_fingerprints_are_recomputed_once_when_the_rules_change(self):
+        tags = {"QuickTime:MajorBrand": "qt  ", "Track3:SampleTime": 0}
+        self._insert_record("v.mov", metadata_fingerprint="stale")
+        with sqlite3.connect(self.database) as connection:
+            connection.execute("UPDATE records SET metadata_json = ?", (json.dumps(tags),))
+            connection.execute("PRAGMA user_version = 0")
+        app = photome.create_app({"TESTING": True, "DATABASE_PATH": str(self.database)})
+        with sqlite3.connect(self.database) as connection:
+            fingerprint, = connection.execute("SELECT metadata_fingerprint FROM records").fetchone()
+            self.assertEqual(connection.execute("PRAGMA user_version").fetchone()[0], photome.FINGERPRINT_VERSION)
+            connection.execute("UPDATE records SET metadata_fingerprint = 'kept'")
+        self.assertEqual(fingerprint, photome.metadata_fingerprint({"QuickTime:MajorBrand": "qt  "}))
+        photome.create_app({"TESTING": True, "DATABASE_PATH": str(self.database)})  # second start
+        with sqlite3.connect(self.database) as connection:
+            self.assertEqual(connection.execute("SELECT metadata_fingerprint FROM records").fetchone()[0], "kept")
+
+    def test_a_running_scan_can_be_cancelled_and_only_one_runs_at_a_time(self):
+        for name in ("a.jpg", "b.jpg", "c.jpg"):
+            (self.scan_root / name).touch()
+        self.app.config["SCAN_BATCH_SIZE"] = 1
+        calls = []
+
+        def fake_run(command, **kwargs):
+            calls.append(command[-1])
+            # the user presses Cancel while the first batch is being read
+            self.assertEqual(self.client.post(f"/api/scans/{job_id}/cancel").status_code, 202)
+            return photome.subprocess.CompletedProcess([], 0, json.dumps([{"SourceFile": command[-1], "EXIF:Make": "X"}]), "")
+
+        job_id = self._create_job()
+        photome.SCAN_CANCEL_EVENTS[job_id] = photome.threading.Event()
+        busy = self.client.post("/api/scans", json={"directory": str(self.scan_root)})
+        self.assertEqual(busy.status_code, 409)  # a scan is already registered as running
+        with patch.object(photome.subprocess, "run", side_effect=fake_run):
+            photome._scan_directory(self.app, job_id, self.scan_root)
+        self.assertEqual(len(calls), 1)  # stopped before the second batch
+        job = self.client.get(f"/api/scans/{job_id}").get_json()
+        self.assertEqual((job["status"], job["records_added"]), ("cancelled", 1))
+        self.assertEqual(self.client.get("/api/records").get_json()["total"], 1)  # kept what it read
+        self.assertEqual(self.client.post(f"/api/scans/{job_id}/cancel").status_code, 409)  # no longer running
+
+    def test_scan_reports_listing_phase_and_latest_job(self):
+        self.assertIsNone(self.client.get("/api/scans/latest").get_json()["job"])
+        (self.scan_root / "a.jpg").touch()
+        job_id, _ = self._scan_with({})
+        latest = self.client.get("/api/scans/latest").get_json()["job"]
+        self.assertEqual((latest["id"], latest["status"], latest["phase"]), (job_id, "completed", "reading"))
+
+    def test_jobs_left_scanning_by_a_dead_process_are_marked_interrupted(self):
+        job_id = self._create_job()
+        photome.interrupt_stale_jobs(self.app)
+        self.assertEqual(self.client.get(f"/api/scans/{job_id}").get_json()["status"], "interrupted")
+
+    def test_old_scan_jobs_table_gets_the_new_columns(self):
+        legacy = self.root / "oldjobs.sqlite3"
+        with sqlite3.connect(legacy) as connection:
+            connection.execute(
+                "CREATE TABLE scan_jobs (id INTEGER PRIMARY KEY AUTOINCREMENT, directory TEXT NOT NULL,"
+                " status TEXT NOT NULL, total_files INTEGER NOT NULL DEFAULT 0, processed_files INTEGER NOT NULL DEFAULT 0,"
+                " records_added INTEGER NOT NULL DEFAULT 0, errors_json TEXT NOT NULL DEFAULT '[]',"
+                " created_at TEXT NOT NULL, updated_at TEXT NOT NULL)"
+            )
+            connection.execute("INSERT INTO scan_jobs (directory, status, created_at, updated_at) VALUES ('/p','completed','n','n')")
+        app = photome.create_app({"TESTING": True, "DATABASE_PATH": str(legacy)})
+        job = app.test_client().get("/api/scans/1").get_json()
+        self.assertEqual((job["phase"], job["skipped_files"]), ("listing", 0))
+
+    def _seed_grouping(self):
+        us = dict(ExifTool_GeolocationCountry="United States")
+        self._insert_record("a.jpg", **us, ExifTool_GeolocationRegion="Utah", ExifTool_GeolocationCity="Springdale", IFD0_ModifyDate="2025-11-13 15:38:43")
+        self._insert_record("b.jpg", **us, ExifTool_GeolocationRegion="Utah", ExifTool_GeolocationCity="Springdale", IFD0_ModifyDate="2025-11-02 08:00:00")
+        self._insert_record("c.jpg", **us, ExifTool_GeolocationRegion="Utah", ExifTool_GeolocationCity="Moab", IFD0_ModifyDate="2024-03-05 10:00:00")
+        self._insert_record("d.jpg", **us, ExifTool_GeolocationRegion="Ohio", ExifTool_GeolocationCity="Springdale", IFD0_ModifyDate="0000:00:00 00:00:00")
+        self._insert_record("e.jpg", ExifTool_GeolocationCountry="Canada", ExifTool_GeolocationRegion="Alberta", ExifTool_GeolocationCity="Banff")
+        self._insert_record("f.jpg")
+
+    def _groups(self, **query):
+        data = self.client.get("/api/groups", query_string=query).get_json()
+        return [(g["label"], g["count"]) for g in data["groups"]], data["total"]
+
+    def test_records_can_be_grouped_by_location(self):
+        self._seed_grouping()
+        self.assertEqual(
+            self._groups(group_by="location", group_level="country"),
+            ([("Canada", 1), ("United States", 4), ("No location", 1)], 6),
+        )
+        self.assertEqual(
+            self._groups(group_by="location", group_level="region")[0],
+            [("Canada › Alberta", 1), ("United States › Ohio", 1), ("United States › Utah", 3), ("No location", 1)],
+        )
+        # same city name in two regions stays two groups
+        self.assertEqual(
+            self._groups(group_by="location", group_level="city")[0],
+            [("Canada › Alberta › Banff", 1), ("United States › Ohio › Springdale", 1),
+             ("United States › Utah › Moab", 1), ("United States › Utah › Springdale", 2), ("No location", 1)],
+        )
+
+    def test_records_can_be_grouped_by_exif_modify_date(self):
+        self._seed_grouping()
+        self.assertEqual(
+            self._groups(group_by="date", group_level="year")[0],
+            [("2025", 2), ("2024", 1), ("No date", 3)],  # newest first, empty and invalid last
+        )
+        self.assertEqual(
+            self._groups(group_by="date", group_level="month")[0],
+            [("2025-11", 2), ("2024-03", 1), ("No date", 3)],
+        )
+        self.assertEqual(
+            self._groups(group_by="date", group_level="day")[0][:2],
+            [("2025-11-13", 1), ("2025-11-02", 1)],
+        )
+
+    def test_group_members_are_loaded_by_key_and_respect_filters(self):
+        self._seed_grouping()
+        groups = self.client.get(
+            "/api/groups", query_string={"group_by": "location", "group_level": "city"}
+        ).get_json()["groups"]
+        springdale = next(g for g in groups if g["label"] == "United States › Utah › Springdale")
+
+        def members(**extra):
+            query = {"group_by": "location", "group_level": "city", "group_key": springdale["key"], **extra}
+            data = self.client.get("/api/records", query_string=query).get_json()
+            return sorted(r["file_name"] for r in data["records"]), data["total"]
+
+        self.assertEqual(members(), (["a.jpg", "b.jpg"], 2))
+        self.assertEqual(members(filter_file_name="a."), (["a.jpg"], 1))
+        self.assertEqual(members(sort="file_name", dir="desc")[1], 2)
+        # the empty key selects records with no location
+        empty = self.client.get(
+            "/api/records", query_string={"group_by": "location", "group_level": "country", "group_key": ""}
+        ).get_json()
+        self.assertEqual([r["file_name"] for r in empty["records"]], ["f.jpg"])
+        # filters narrow the group list and counts too
+        self.assertEqual(
+            self._groups(group_by="location", group_level="country", filter_file_name="a."),
+            ([("United States", 1)], 1),
+        )
+
+    def test_unknown_groupings_are_rejected(self):
+        self.assertEqual(self.client.get("/api/groups", query_string={"group_by": "x", "group_level": "y"}).status_code, 400)
+        self.assertEqual(self.client.get("/api/groups").status_code, 400)
+        bad = self.client.get("/api/records", query_string={"group_by": "location", "group_level": "street", "group_key": "x"})
+        self.assertEqual(bad.status_code, 400)
 
     def _insert_record(self, name, **columns):
         names = ["file_path", "file_name", "metadata_json", "created_at", *columns]
