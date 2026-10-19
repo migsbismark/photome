@@ -143,3 +143,68 @@ def column_values(metadata):
         column: _stored_value(tag, metadata[tag]) if tag in metadata else None
         for tag, column in zip(TAGS, COLUMNS)
     }
+
+
+# ---------------------------------------------------------------------------------------
+# When was this picture or video taken? Used to file it under a year and month.
+#
+# The best date available is used, in this order (the first that is a real date wins):
+#   camera    the date the camera recorded (DateTimeOriginal and friends)
+#   video     the creation date inside a video
+#   modified  the date the picture was last edited (EXIF ModifyDate)
+#   file      the date of the file on the disk (least reliable: a copy gets the day it was copied)
+# Only the wall-clock time written in the file is used (no time-zone conversion), because a
+# photo taken at 23:30 local time belongs to that day wherever the file is read.
+# ---------------------------------------------------------------------------------------
+TAKEN_SOURCES = (
+    ("camera", (
+        "ExifIFD:DateTimeOriginal",
+        "Composite:SubSecDateTimeOriginal",
+        "XMP-exif:DateTimeOriginal",
+        "ExifIFD:CreateDate",
+        "XMP-xmp:CreateDate",
+        "XMP-photoshop:DateCreated",
+    )),
+    ("video", (
+        "Keys:CreationDate",
+        "QuickTime:CreationDate",
+        "QuickTime:CreateDate",
+        "QuickTime:MediaCreateDate",
+        "QuickTime:TrackCreateDate",
+    )),
+    ("modified", ("IFD0:ModifyDate",)),
+)
+_TAKEN_PATTERN = re.compile(r"^\s*(\d{4})[:-](\d{2})[:-](\d{2})[ T](\d{2}):(\d{2}):(\d{2})")
+EARLIEST_YEAR = 1905  # QuickTime's "zero" date is 1904; anything before 1905 is not a real date
+
+
+def wall_clock(value, latest_year=None):
+    """'YYYY-MM-DD HH:MM:SS' from an ExifTool date as written, or None if it is not a real date."""
+    if not isinstance(value, str):
+        return None
+    match = _TAKEN_PATTERN.match(value)
+    if not match:
+        return None
+    year, month, day, hour, minute, second = (int(part) for part in match.groups())
+    latest = latest_year or datetime.now().year + 1
+    if not EARLIEST_YEAR <= year <= latest:
+        return None
+    try:
+        datetime(year, month, day, hour, minute, second)
+    except ValueError:
+        return None
+    return f"{year:04d}-{month:02d}-{day:02d} {hour:02d}:{minute:02d}:{second:02d}"
+
+
+def taken_date(metadata, file_modified=None):
+    """(taken_at, source) for a file's metadata; source is camera, video, modified or file.
+    (None, 'none') when no date is usable. file_modified is the file's own date as stored."""
+    for source, tags in TAKEN_SOURCES:
+        for tag in tags:
+            found = wall_clock(metadata.get(tag))
+            if found:
+                return found, source
+    found = wall_clock(file_modified)
+    if found:
+        return found, "file"
+    return None, "none"

@@ -8,6 +8,8 @@ services:
     environment:
       HOST: 0.0.0.0
       PHOTOME_DATABASE_PATH: /data/photome.sqlite3
+      # "/photos=C:\\Pictures|/photos-2=D:\\archive", set by the start scripts so copy scripts can name the PC folders
+      PHOTOME_HOST_PATHS: ${PHOTOME_HOST_PATHS:-}
     volumes:
       - .:/workspace
       - claude-config:/root/.claude

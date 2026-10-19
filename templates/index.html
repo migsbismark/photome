@@ -23,6 +23,53 @@
     .success { color: #067647; }
     .table-wrap { overflow-x: auto; }
     [hidden] { display: none !important; }
+    .actions-row { display: flex; gap: 8px; flex-wrap: wrap; }
+    .dup-controls { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin: 10px 0; }
+    .dup-group { border: 1px solid #e4e7ec; border-radius: 8px; margin: 14px 0; overflow: hidden; }
+    .dup-group > header { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding: 10px 14px; background: #f9fafb; border-bottom: 1px solid #e4e7ec; font-weight: 600; }
+    .dup-group > header .muted { font-weight: 400; }
+    .dup-files { display: flex; flex-wrap: wrap; gap: 14px; padding: 14px; }
+    .dup-file { width: 230px; display: flex; flex-direction: column; gap: 4px; font-size: .85rem; }
+    .dup-thumb { height: 150px; width: 100%; border-radius: 6px; background: #f2f4f7; border: 1px solid #e4e7ec; display: flex; align-items: center; justify-content: center; overflow: hidden; padding: 0; cursor: pointer; color: #475467; font-size: .9rem; }
+    .dup-thumb img { max-width: 100%; max-height: 100%; object-fit: contain; }
+    .dup-file .name { font-weight: 600; overflow-wrap: anywhere; }
+    .dup-file .path { color: #667085; overflow-wrap: anywhere; font-size: .8rem; }
+    .sync-box { border-radius: 8px; padding: 10px 14px; margin: 10px 0; background: #eff8ff; color: #175cd3; }
+    .sync-box.ok { background: #ecfdf3; color: #067647; }
+    .sync-box.warn { background: #fffaeb; color: #b54708; }
+    .sync-box code, .sync-box pre { background: rgba(0,0,0,.06); border-radius: 4px; padding: 2px 5px; }
+    .sync-box pre { padding: 8px; max-width: none; max-height: none; white-space: pre-wrap; overflow-wrap: anywhere; margin: 6px 0 0; }
+    #sync-progress { width: 100%; height: 14px; accent-color: #067647; margin: 6px 0; }
+    #sync-start { background: #067647; }
+    .compare-controls { display: flex; gap: 14px; flex-wrap: wrap; align-items: flex-end; margin: 12px 0; }
+    .compare-controls label, .compare-controls fieldset { display: flex; flex-direction: column; gap: 4px; font-size: .85rem; font-weight: 600; border: 0; margin: 0; padding: 0; }
+    .compare-controls select, .compare-controls input[type=text] { padding: 8px; border: 1px solid #cfd4dc; border-radius: 6px; font: inherit; font-weight: 400; background: white; min-width: 180px; }
+    #compare-sources { flex-direction: row; flex-wrap: wrap; gap: 10px; }
+    #compare-sources label { flex-direction: row; align-items: center; gap: 5px; font-weight: 400; }
+    .compare-summary { margin: 10px 0; padding: 10px 14px; border-radius: 8px; background: #eff8ff; color: #175cd3; }
+    .compare-summary.ok { background: #ecfdf3; color: #067647; }
+    .compare-summary.warn { background: #fffaeb; color: #b54708; }
+    .layout-settings { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px; margin: 12px 0; }
+    .layout-settings label, .layout-settings fieldset { display: flex; flex-direction: column; gap: 4px; font-size: .85rem; font-weight: 600; border: 0; margin: 0; padding: 0; }
+    .layout-settings fieldset div { display: flex; flex-wrap: wrap; gap: 4px 12px; }
+    .layout-settings label.check, .layout-settings fieldset label { flex-direction: row; align-items: center; gap: 6px; font-weight: 400; }
+    .layout-settings select, .layout-settings input[type=text] { padding: 8px; border: 1px solid #cfd4dc; border-radius: 6px; font: inherit; font-weight: 400; background: white; }
+    .layout-browser { display: grid; grid-template-columns: minmax(260px, 340px) 1fr; gap: 16px; margin-top: 12px; }
+    @media (max-width: 900px) { .layout-browser { grid-template-columns: 1fr; } }
+    #layout-tree { border: 1px solid #e4e7ec; border-radius: 8px; padding: 8px; max-height: 560px; overflow: auto; font-size: .9rem; }
+    #layout-tree details { margin-left: 14px; }
+    #layout-tree > details, #layout-tree > .leaf { margin-left: 0; }
+    #layout-tree summary, #layout-tree .leaf { display: flex; justify-content: space-between; gap: 8px; padding: 3px 4px; border-radius: 4px; cursor: pointer; }
+    #layout-tree .leaf { margin-left: 14px; }
+    #layout-tree summary:hover, #layout-tree .leaf:hover, #layout-tree .selected { background: #eef4ff; }
+    #layout-tree .count { color: #667085; white-space: nowrap; }
+    .dup-more { padding: 0 14px 14px; }
+    .dup-folder { display: inline-flex; align-items: center; gap: 8px; font-weight: 600; font-size: .9rem; flex: 1; min-width: 280px; }
+    .dup-folder input { flex: 1; font-weight: 400; }
+    .badge.original { background: #ecfdf3; color: #067647; }
+    .unprocessed-controls { display: flex; gap: 10px; flex-wrap: wrap; margin: 10px 0; }
+    .unprocessed-controls select { padding: 8px; border: 1px solid #cfd4dc; border-radius: 6px; font: inherit; background: white; }
+    #unprocessed-panel summary { cursor: pointer; }
     .scroll-top { overflow-x: auto; overflow-y: hidden; }
     .scroll-top > div { height: 1px; }
     table { width: 100%; border-collapse: collapse; background: white; }
@@ -99,7 +146,10 @@
         <h2>Metadata records</h2>
         <p class="muted">All dates are shown as yyyy-mm-dd hh:mm:ss in Pacific time (PST/PDT). Dates without a time zone in the file (such as EXIF ModifyDate) are shown as recorded by the camera. Records include every metadata tag returned by ExifTool. Duplicate matching is based on metadata, excluding filesystem-only tags.</p>
       </div>
-      <button class="secondary" id="duplicates-button" type="button">Find and flag duplicates</button>
+      <div class="actions-row">
+        <button class="secondary" id="export-records" type="button" title="Download every record that matches the current filters and sorting, with the visible columns">Export to CSV</button>
+        <button class="secondary" id="duplicates-button" type="button">Find and flag duplicates</button>
+      </div>
     </div>
     <div class="grouping">
       <label>Group by
@@ -137,6 +187,304 @@
         <button class="secondary" id="next-button" type="button">Next</button>
       </div>
     </div>
+  </section>
+
+  <section class="panel">
+    <details id="unprocessed-panel">
+      <summary><strong>Files found by scans</strong> <span class="muted" id="unprocessed-count"></span></summary>
+      <p class="muted">Every file the scans found: the ones turned into records above (<em>Processed</em>) and the ones that could not be, such as <code>.DS_Store</code> or <code>Thumbs.db</code> (<em>Not processed</em>). Not-processed files are kept in the database apart from the records, so they never affect duplicates, filters or grouping.</p>
+      <p class="muted" id="unprocessed-summary"></p>
+      <div class="unprocessed-controls">
+        <select id="unprocessed-status" aria-label="Show">
+          <option value="">All files</option>
+          <option value="processed">Processed only</option>
+          <option value="not_processed">Not processed only</option>
+        </select>
+        <select id="unprocessed-reason" aria-label="Reason">
+          <option value="">All reasons</option>
+          <option value="no_metadata">No metadata (not a photo or video)</option>
+          <option value="not_returned">No answer from ExifTool</option>
+        </select>
+        <input type="text" id="unprocessed-search" placeholder="Search path" aria-label="Search path">
+        <button class="secondary" id="export-files" type="button" title="Download every file that matches these filters">Export to CSV</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>File name</th><th>Path</th><th>Status</th><th>Reason</th><th>Detail</th><th>Type</th><th>Size</th><th>Found</th></tr></thead>
+          <tbody id="unprocessed-body"></tbody>
+        </table>
+      </div>
+      <div class="pagination">
+        <span id="unprocessed-page" class="muted"></span>
+        <div>
+          <button class="secondary" id="unprocessed-prev" type="button">Previous</button>
+          <button class="secondary" id="unprocessed-next" type="button">Next</button>
+        </div>
+      </div>
+    </details>
+  </section>
+
+  <section class="panel">
+    <details id="duplicates-panel">
+      <summary><strong>Duplicate records</strong> <span class="muted" id="duplicates-count"></span></summary>
+      <p class="muted">Identical files (same metadata) grouped together: each group has the original, which is its oldest record, and its copies, newest record created first, with a preview of every file. Groups are ordered by their most recent record created (Pacific time). Enter a <strong>folder</strong> to look only for identical files inside that folder and its sub-folders; leave it empty to look across the whole database. This list is worked out live, so it does not need <em>Find and flag duplicates</em>.</p>
+      <div class="dup-controls">
+        <label class="dup-folder">Folder
+          <input type="text" id="duplicates-folder" list="duplicates-folders" placeholder="empty = whole database, or e.g. /photos-2/pictures" aria-label="Look for duplicates only inside this folder" autocomplete="off">
+        </label>
+        <datalist id="duplicates-folders"></datalist>
+        <input type="text" id="duplicates-search" placeholder="Search path" aria-label="Search path in duplicates">
+        <button class="secondary" id="export-duplicates" type="button" title="Download every file of every group that matches the folder and search">Export to CSV</button>
+      </div>
+      <p class="muted" id="duplicates-scope"></p>
+      <div id="duplicates-groups"></div>
+      <div class="pagination">
+        <span id="duplicates-page" class="muted"></span>
+        <div>
+          <button class="secondary" id="duplicates-prev" type="button">Previous groups</button>
+          <button class="secondary" id="duplicates-next" type="button">Next groups</button>
+        </div>
+      </div>
+    </details>
+  </section>
+
+  <section class="panel">
+    <details id="compare-panel">
+      <summary><strong>Compare mount points</strong> <span class="muted" id="compare-count"></span></summary>
+      <p class="muted">Which files are in the other mount points but <strong>not</strong> in the one you choose (the <em>target</em>, the one that should end up complete)? This panel only <em>reads</em> the records: it copies nothing and changes nothing. To bring the missing files over, export the list as CSV, or download a copy script and run it on your PC (it only ever copies; it never overwrites or deletes). Missing files are copied into a <code>_from-&lt;source&gt;</code> folder of the target, keeping their sub-folders. Scan every mount point first.</p>
+      <div class="compare-controls">
+        <label>Target (should have everything)
+          <select id="compare-target" aria-label="Target mount point"></select>
+        </label>
+        <fieldset>
+          <legend>Look for files from</legend>
+          <div id="compare-sources"></div>
+        </fieldset>
+        <label>A file is "already there" when it has
+          <select id="compare-rule" aria-label="Match rule">
+            <option value="name_size">the same name and size (recommended)</option>
+            <option value="fingerprint_size">the same metadata and size (also finds renamed copies)</option>
+          </select>
+        </label>
+        <label>Search path
+          <input type="text" id="compare-search" placeholder="e.g. wedding" aria-label="Search path in missing files">
+        </label>
+      </div>
+      <div class="compare-controls">
+        <button id="compare-run" type="button" title="Compare again with what is in the database now (for example after a scan)">Compare again</button>
+        <button class="secondary" id="export-compare" type="button" title="Download the whole list of missing files">Export list to CSV</button>
+        <button class="secondary" id="compare-script-ps" type="button" title="A Windows PowerShell script that copies the missing files">Download copy script (PowerShell)</button>
+        <button class="secondary" id="compare-script-sh" type="button" title="A bash script using rsync that copies the missing files">Download copy script (rsync)</button>
+      </div>
+      <div class="compare-summary" id="compare-summary" role="status"></div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>From</th><th>File name</th><th>Path</th><th>Size</th><th>Record created</th><th>Would be copied to</th><th>Preview</th></tr></thead>
+          <tbody id="compare-body"></tbody>
+        </table>
+      </div>
+      <div class="pagination">
+        <span id="compare-page" class="muted"></span>
+        <div>
+          <button class="secondary" id="compare-prev" type="button">Previous</button>
+          <button class="secondary" id="compare-next" type="button">Next</button>
+        </div>
+      </div>
+    </details>
+  </section>
+
+  <section class="panel">
+    <details id="sync-panel">
+      <summary><strong>Sync mount points</strong> <span class="muted" id="sync-count"></span></summary>
+      <p class="muted">Copies the files that other mount points have and the <em>target</em> lacks into the target, so it ends up complete. Files go into <code>&lt;target&gt;/_from-&lt;source&gt;/</code> (keeping their sub-folders). The sync <strong>only adds files</strong>: it never overwrites or deletes anything, writes each file under a temporary name first, and checks the size (and, if you tick the box, a checksum) before keeping it. The copies are then scanned into the records, so the target shows as complete in <em>Compare mount points</em>. The target stays read-only except for its <code>_from-&lt;source&gt;</code> folders, which must have been opened for writing on purpose when the app was started (<code>start.ps1 -SyncInto &lt;target&gt;</code>).</p>
+      <div class="compare-controls">
+        <label>Target (receives the files)
+          <select id="sync-target" aria-label="Sync target mount point"></select>
+        </label>
+        <fieldset>
+          <legend>Copy files from</legend>
+          <div id="sync-sources"></div>
+        </fieldset>
+        <label>A file is "already there" when it has
+          <select id="sync-rule" aria-label="Sync match rule">
+            <option value="name_size">the same name and size (recommended)</option>
+            <option value="fingerprint_size">the same metadata and size (also finds renamed copies)</option>
+          </select>
+        </label>
+        <label class="check"><input type="checkbox" id="sync-verify"> Verify every copy with a checksum (slower)</label>
+      </div>
+      <div class="sync-box" id="sync-plan" role="status"></div>
+      <div class="compare-controls">
+        <button id="sync-start" type="button">Start sync</button>
+        <button class="secondary" id="sync-cancel" type="button" hidden>Cancel sync</button>
+      </div>
+      <progress id="sync-progress" hidden max="100" aria-label="Sync progress"></progress>
+      <p id="sync-status" role="status" aria-live="polite"></p>
+      <h3>Sync history</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Started (Pacific time)</th><th>Copied into</th><th>From</th><th>Status</th><th>Copied</th><th>Already there</th><th>Failed</th><th>Time used</th><th></th></tr></thead>
+          <tbody id="sync-history"></tbody>
+        </table>
+      </div>
+      <div id="sync-details" hidden>
+        <h3 id="sync-details-title"></h3>
+        <div class="unprocessed-controls">
+          <select id="sync-details-status" aria-label="Show results">
+            <option value="">All results</option>
+            <option value="copied">Copied</option>
+            <option value="renamed">Copied under another name</option>
+            <option value="already_there">Already there</option>
+            <option value="failed">Failed</option>
+          </select>
+          <button class="secondary" id="sync-details-export" type="button">Export to CSV</button>
+          <button class="secondary" id="sync-details-close" type="button">Close</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Result</th><th>From</th><th>Copied to</th><th>Size</th><th>Detail</th><th>Finished</th></tr></thead>
+            <tbody id="sync-details-body"></tbody>
+          </table>
+        </div>
+        <div class="pagination">
+          <span id="sync-details-page" class="muted"></span>
+          <div>
+            <button class="secondary" id="sync-details-prev" type="button">Previous</button>
+            <button class="secondary" id="sync-details-next" type="button">Next</button>
+          </div>
+        </div>
+      </div>
+    </details>
+  </section>
+
+  <section class="panel">
+    <details id="mounts-panel">
+      <summary><strong>Mount points</strong> <span class="muted" id="mounts-count"></span></summary>
+      <p class="muted">Which folder on your PC is behind each mount point, how PhotoMe may use it, and every time that changed. The database stores only the mount name (for example <code>/archive</code>); this panel keeps the link to the real folder, with dates in Pacific time. It is checked each time the app starts, and a row is added to the history only when something changed.</p>
+      <div class="sync-box warn" id="mounts-note" hidden></div>
+      <h3>Mount points now</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Mount point</th><th>Folder on your PC</th><th>Access</th><th>Files in the database</th><th>First seen</th><th>Last seen</th><th>Status</th></tr></thead>
+          <tbody id="mounts-body"></tbody>
+        </table>
+      </div>
+      <h3>History</h3>
+      <div class="unprocessed-controls">
+        <select id="mounts-filter-mount" aria-label="Mount point"><option value="">All mount points</option></select>
+        <select id="mounts-filter-event" aria-label="Event">
+          <option value="">All events</option>
+          <option value="mounted">Mounted</option>
+          <option value="changed">Points at another folder</option>
+          <option value="access_changed">Access changed</option>
+          <option value="unmounted">No longer mounted</option>
+          <option value="renamed">Renamed</option>
+        </select>
+        <button class="secondary" id="export-mounts" type="button" title="Download the whole history that matches the filters">Export to CSV</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>When (Pacific time)</th><th>Mount point</th><th>Event</th><th>Folder on your PC</th><th>Previous folder</th><th>Access</th><th>Details</th></tr></thead>
+          <tbody id="mounts-history"></tbody>
+        </table>
+      </div>
+      <div class="pagination">
+        <span id="mounts-page" class="muted"></span>
+        <div>
+          <button class="secondary" id="mounts-prev" type="button">Previous</button>
+          <button class="secondary" id="mounts-next" type="button">Next</button>
+        </div>
+      </div>
+    </details>
+  </section>
+
+  <section class="panel">
+    <details id="layout-panel">
+      <summary><strong>Plan a new library</strong> <span class="muted" id="layout-count"></span></summary>
+      <p class="muted">Models how all your files could be stored in a new place: one folder per <strong>year</strong>, then <strong>month</strong>, then <strong>location</strong>, holding the files taken then and there. <strong>Duplicates are left out and the original of each is kept.</strong> Nothing is copied, moved or changed: this only builds a plan that you can browse and export. The year and month come from the date the camera recorded (or a video's creation date); the location is the nearest town to the GPS position, and files without GPS go to an "Unknown location" folder.</p>
+      <div class="sync-box warn" id="layout-warning" hidden></div>
+      <div class="layout-settings">
+        <fieldset><legend>Include these mount points</legend><div id="layout-mounts"></div></fieldset>
+        <fieldset><legend>Include</legend><div>
+          <label><input type="checkbox" class="layout-kind" value="photos" checked> Photos</label>
+          <label><input type="checkbox" class="layout-kind" value="videos" checked> Videos</label>
+          <label><input type="checkbox" class="layout-kind" value="other" checked> Other files (sidecars, archives…)</label>
+        </div></fieldset>
+        <label>Duplicates
+          <select id="layout-duplicates" aria-label="Duplicates">
+            <option value="size">Leave out files with the same metadata and size (recommended)</option>
+            <option value="metadata">Leave out files with the same metadata (as the Duplicate records panel)</option>
+            <option value="none">Do not leave any out</option>
+          </select>
+        </label>
+        <label>Keep the original from
+          <select id="layout-prefer" aria-label="Which copy is kept"><option value="">the oldest record</option></select>
+        </label>
+        <label>Location folder
+          <select id="layout-location" aria-label="Location folder">
+            <option value="city">City (Tustin Legacy, California, US)</option>
+            <option value="region">Region (California, US)</option>
+            <option value="country">Country (United States)</option>
+            <option value="none">No location folder</option>
+          </select>
+        </label>
+        <label>Month folder
+          <select id="layout-month" aria-label="Month folder">
+            <option value="name">10 October</option>
+            <option value="number">10</option>
+          </select>
+        </label>
+        <label class="check"><input type="checkbox" id="layout-file-date"> Use the file's own date when there is no camera date (less reliable: a copy gets the day it was copied)</label>
+        <label>New library folder (optional, to show full paths)
+          <input type="text" id="layout-root" placeholder="e.g. G:\Photos" aria-label="New library folder">
+        </label>
+      </div>
+      <div class="compare-controls">
+        <button id="layout-build" type="button">Build plan</button>
+        <button class="secondary" id="layout-export" type="button" title="Download the plan (or the selected folder) as a list of old and new paths">Export plan to CSV</button>
+        <button class="secondary" id="layout-export-removed" type="button" title="Download the duplicates that were left out, with the file kept instead">Export duplicates left out to CSV</button>
+      </div>
+      <p id="layout-status" role="status" aria-live="polite"></p>
+      <div class="sync-box" id="layout-summary" hidden></div>
+      <div class="sync-box" id="layout-copy" hidden>
+        <strong>Copy the plan to its new location</strong>
+        <p class="muted">Where should the files be copied? Choose a folder on a mount point that is <strong>writable</strong> (not the archive); the year / month / location folders are created inside it. Originals are only read: nothing is moved, overwritten or deleted, and a file is given its final name only once it has been copied completely. If you run it again, files already there are skipped, so an interrupted copy can simply be continued.</p>
+        <div class="compare-controls">
+          <label>Copy to <input type="text" id="layout-destination" list="layout-destination-list" placeholder="/library/Photos" size="34" aria-label="Folder to copy the new library to"></label>
+          <datalist id="layout-destination-list"></datalist>
+          <label class="check"><input type="checkbox" id="layout-verify"> Check each copy against the original (slower: reads every file twice)</label>
+          <button class="secondary" id="layout-copy-check" type="button">Check folder</button>
+          <button id="layout-copy-start" type="button">Copy files</button>
+          <button class="secondary" id="layout-copy-stop" type="button" hidden>Stop</button>
+        </div>
+        <p id="layout-copy-status" role="status" aria-live="polite"></p>
+        <progress id="layout-copy-progress" max="100" value="0" hidden></progress>
+        <div id="layout-copy-errors" class="muted"></div>
+      </div>
+      <div class="layout-browser" id="layout-browser" hidden>
+        <div>
+          <h3 style="margin-top:0">New folders</h3>
+          <div id="layout-tree"></div>
+        </div>
+        <div>
+          <h3 style="margin-top:0" id="layout-files-title">Files</h3>
+          <div class="unprocessed-controls"><input type="text" id="layout-search" placeholder="Search path or name" aria-label="Search the plan"></div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>From</th><th>New path</th><th>Size</th><th>Date used</th><th>Copies left out</th><th>Preview</th></tr></thead>
+              <tbody id="layout-files"></tbody>
+            </table>
+          </div>
+          <div class="pagination">
+            <span id="layout-page" class="muted"></span>
+            <div>
+              <button class="secondary" id="layout-prev" type="button">Previous</button>
+              <button class="secondary" id="layout-next" type="button">Next</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </details>
   </section>
 </main>
 <dialog id="viewer" aria-label="Photo viewer">
@@ -526,6 +874,1091 @@
     renderGroups();
   });
 
+  // ---- files that were not turned into records
+  const reasonLabels = { no_metadata: "No metadata", not_returned: "No answer from ExifTool" };
+  const unprocessedBody = document.querySelector("#unprocessed-body");
+  const unprocessedPageSize = 50;
+  let unprocessedPage = 1;
+  let unprocessedTimer = null;
+
+  function formatBytes(bytes) {
+    if (bytes === null || bytes === undefined) return "";
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1048576) return `${(bytes / 1024).toFixed(1)} KB`;
+    if (bytes < 1073741824) return `${(bytes / 1048576).toFixed(1)} MB`;
+    if (bytes < 1099511627776) return `${(bytes / 1073741824).toFixed(1)} GB`;
+    return `${(bytes / 1099511627776).toFixed(2)} TB`;
+  }
+
+  async function loadUnprocessed() {
+    const query = new URLSearchParams({ page: unprocessedPage, page_size: unprocessedPageSize });
+    const status = document.querySelector("#unprocessed-status").value;
+    const reason = document.querySelector("#unprocessed-reason").value;
+    const search = document.querySelector("#unprocessed-search").value.trim();
+    if (status) query.set("status", status);
+    if (reason) query.set("reason", reason);
+    if (search) query.set("q", search);
+    const response = await fetch(`/api/files?${query}`);
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || "Could not load the files.");
+    const { processed, not_processed: notProcessed } = data.summary.by_status;
+    document.querySelector("#unprocessed-count").textContent =
+      `(${processed + notProcessed} files: ${processed} processed, ${notProcessed} not processed)`;
+    const reasons = Object.entries(data.summary.by_reason).map(([key, n]) => `${reasonLabels[key] || key}: ${n}`);
+    const types = data.summary.by_extension.slice(0, 8).map(item => `${item.extension || "no extension"}: ${item.count}`);
+    document.querySelector("#unprocessed-summary").textContent = (processed + notProcessed)
+      ? `${notProcessed ? `Not processed — ${reasons.join(" · ")}. ` : "Nothing was left out. "}Most common types in this list — ${types.join(", ")}.`
+      : "No files found yet. Scan a directory to get started.";
+    unprocessedBody.replaceChildren();
+    if (!data.files.length) {
+      const row = unprocessedBody.insertRow();
+      const cell = row.insertCell();
+      cell.colSpan = 8;
+      cell.textContent = (processed + notProcessed) ? "No files match." : "Nothing here yet.";
+    }
+    for (const file of data.files) {
+      const row = unprocessedBody.insertRow();
+      row.insertCell().textContent = file.file_name;
+      const path = row.insertCell();
+      path.className = "path";
+      path.textContent = file.file_path;
+      const statusCell = row.insertCell();
+      const badge = document.createElement("span");
+      badge.className = `badge${file.status === "processed" ? "" : " duplicate"}`;
+      badge.textContent = file.status === "processed" ? "Processed" : "Not processed";
+      statusCell.append(badge);
+      row.insertCell().textContent = file.reason ? (reasonLabels[file.reason] || file.reason) : "";
+      row.insertCell().textContent = file.detail || "";
+      row.insertCell().textContent = file.file_type || file.extension || "";
+      row.insertCell().textContent = formatBytes(file.file_size);
+      row.insertCell().textContent = file.created_at;
+    }
+    const first = data.total ? (unprocessedPage - 1) * unprocessedPageSize + 1 : 0;
+    const last = Math.min(unprocessedPage * unprocessedPageSize, data.total);
+    document.querySelector("#unprocessed-page").textContent = `${first}–${last} of ${data.total} files`;
+    document.querySelector("#unprocessed-prev").disabled = unprocessedPage <= 1;
+    document.querySelector("#unprocessed-next").disabled = last >= data.total;
+  }
+
+  const reloadUnprocessed = () => loadUnprocessed().catch(error => showMessage(error.message, "error"));
+  document.querySelector("#unprocessed-panel").addEventListener("toggle", event => { if (event.target.open) reloadUnprocessed(); });
+  document.querySelector("#unprocessed-status").addEventListener("change", event => {
+    // reasons only exist for files that were not processed
+    document.querySelector("#unprocessed-reason").disabled = event.target.value === "processed";
+    if (event.target.value === "processed") document.querySelector("#unprocessed-reason").value = "";
+    unprocessedPage = 1;
+    reloadUnprocessed();
+  });
+  document.querySelector("#unprocessed-reason").addEventListener("change", () => { unprocessedPage = 1; reloadUnprocessed(); });
+  document.querySelector("#unprocessed-search").addEventListener("input", () => {
+    clearTimeout(unprocessedTimer);
+    unprocessedTimer = setTimeout(() => { unprocessedPage = 1; reloadUnprocessed(); }, 350);
+  });
+  document.querySelector("#unprocessed-prev").addEventListener("click", () => { unprocessedPage = Math.max(1, unprocessedPage - 1); reloadUnprocessed(); });
+  document.querySelector("#unprocessed-next").addEventListener("click", () => { unprocessedPage += 1; reloadUnprocessed(); });
+  reloadUnprocessed();  // fills in the count shown next to the heading
+
+  // ---- duplicate records: groups of files that are copies of each other
+  const duplicatesPageSize = 10;
+  let duplicatesPage = 1;
+  let duplicatesTimer = null;
+
+  function duplicateFileCard(file) {
+    const card = document.createElement("div");
+    card.className = "dup-file";
+    const thumb = document.createElement("button");
+    thumb.type = "button";
+    thumb.className = "dup-thumb";
+    if (file.preview === "image") {
+      const img = document.createElement("img");
+      img.loading = "lazy";
+      img.alt = file.file_name;
+      img.src = `/api/records/${file.id}/thumbnail`;
+      img.addEventListener("error", () => { thumb.textContent = "Preview unavailable"; });
+      thumb.append(img);
+      thumb.title = "Click to view the picture";
+    } else if (file.preview === "video") {
+      thumb.textContent = "▶ Play video";
+    } else {
+      thumb.textContent = "No preview";
+      thumb.disabled = true;
+      thumb.style.cursor = "default";
+    }
+    if (file.preview) thumb.addEventListener("click", () => openViewer(file));
+    const name = document.createElement("div");
+    name.className = "name";
+    name.textContent = file.file_name + " ";
+    const badge = document.createElement("span");
+    badge.className = `badge ${file.is_original ? "original" : "duplicate"}`;
+    badge.textContent = file.is_original ? "Original" : "Duplicate";
+    name.append(badge);
+    const path = document.createElement("div");
+    path.className = "path";
+    path.textContent = file.file_path;
+    const created = document.createElement("div");
+    created.textContent = `Record created ${file.created_at}`;
+    const details = document.createElement("div");
+    details.className = "muted";
+    details.textContent = [file.file_type, file.file_size === null ? "" : formatBytes(file.file_size)].filter(Boolean).join(" · ");
+    card.append(thumb, name, path, created, details);
+    return card;
+  }
+
+  async function loadDuplicates() {
+    const query = duplicatesQuery({ page: duplicatesPage, page_size: duplicatesPageSize });
+    const folder = document.querySelector("#duplicates-folder").value.trim();
+    const search = document.querySelector("#duplicates-search").value.trim();
+    const response = await fetch(`/api/duplicate-groups?${query}`);
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || "Could not load the duplicates.");
+    const scope = folder ? ` inside ${folder}` : "";
+    document.querySelector("#duplicates-count").textContent = data.total_groups
+      ? `(${data.total_groups} ${data.total_groups === 1 ? "group" : "groups"}, ${data.total_files} files${scope})`
+      : `(none found${scope})`;
+    document.querySelector("#duplicates-scope").textContent = folder
+      ? `Looking only inside ${folder} and its sub-folders (${data.records_in_scope} records there).`
+      : "Looking at the whole database.";
+    const suggestions = document.querySelector("#duplicates-folders");
+    suggestions.replaceChildren(...data.folders.map(directory => Object.assign(document.createElement("option"), { value: directory })));
+    const holder = document.querySelector("#duplicates-groups");
+    holder.replaceChildren();
+    if (!data.groups.length) {
+      const note = document.createElement("p");
+      note.className = "muted";
+      note.textContent = folder && !data.records_in_scope
+        ? `No records were found under ${folder}. Folder names are case-sensitive; start with a scanned folder such as ${data.folders[0] || "/photos"}.`
+        : search
+          ? "No duplicate groups match the search."
+          : folder
+            ? `No identical files were found inside ${folder}.`
+            : "No identical files were found.";
+      holder.append(note);
+    }
+    data.groups.forEach((group, index) => {
+      const section = document.createElement("section");
+      section.className = "dup-group";
+      const header = document.createElement("header");
+      const number = (duplicatesPage - 1) * duplicatesPageSize + index + 1;
+      const title = document.createElement("span");
+      title.textContent = `Group ${number} · ${group.size} files`;
+      const latest = document.createElement("span");
+      latest.className = "muted";
+      latest.textContent = `Latest record created ${group.latest_created}`;
+      header.append(title, latest);
+      const files = document.createElement("div");
+      files.className = "dup-files";
+      for (const file of group.files) files.append(duplicateFileCard(file));
+      section.append(header, files);
+      // a set can hold hundreds of files: show the newest, load the rest on request
+      let shown = group.files.length;
+      if (group.size > shown) {
+        const footer = document.createElement("div");
+        footer.className = "dup-more";
+        const more = document.createElement("button");
+        more.type = "button";
+        more.className = "secondary";
+        const label = () => `Show ${Math.min(24, group.size - shown)} more (${group.size - shown} not shown)`;
+        more.textContent = label();
+        more.addEventListener("click", async () => {
+          more.disabled = true;
+          try {
+            const response = await fetch(`/api/duplicate-groups/${encodeURIComponent(group.key)}/files?${new URLSearchParams({ offset: shown, limit: 24, path: folder })}`);
+            const extra = await response.json();
+            if (!response.ok) throw new Error(extra.error || "Could not load more files.");
+            for (const file of extra.files) files.append(duplicateFileCard(file));
+            shown += extra.files.length;
+            if (shown >= group.size || !extra.files.length) footer.remove(); else { more.textContent = label(); more.disabled = false; }
+          } catch (error) {
+            showMessage(error.message, "error");
+            more.disabled = false;
+          }
+        });
+        footer.append(more);
+        section.append(footer);
+      }
+      holder.append(section);
+    });
+    const first = data.total_groups ? (duplicatesPage - 1) * duplicatesPageSize + 1 : 0;
+    const last = Math.min(duplicatesPage * duplicatesPageSize, data.total_groups);
+    document.querySelector("#duplicates-page").textContent = `Groups ${first}–${last} of ${data.total_groups}`;
+    document.querySelector("#duplicates-prev").disabled = duplicatesPage <= 1;
+    document.querySelector("#duplicates-next").disabled = last >= data.total_groups;
+  }
+
+  function duplicatesQuery(extra = {}) {
+    const query = new URLSearchParams(extra);
+    const folder = document.querySelector("#duplicates-folder").value.trim();
+    const search = document.querySelector("#duplicates-search").value.trim();
+    if (folder) query.set("path", folder);
+    if (search) query.set("q", search);
+    return query;
+  }
+
+  const reloadDuplicates = () => loadDuplicates().catch(error => showMessage(error.message, "error"));
+  document.querySelector("#duplicates-panel").addEventListener("toggle", event => { if (event.target.open) reloadDuplicates(); });
+  for (const id of ["#duplicates-search", "#duplicates-folder"]) {
+    document.querySelector(id).addEventListener("input", () => {
+      clearTimeout(duplicatesTimer);
+      duplicatesTimer = setTimeout(() => { duplicatesPage = 1; reloadDuplicates(); }, 450);
+    });
+  }
+  document.querySelector("#duplicates-prev").addEventListener("click", () => { duplicatesPage = Math.max(1, duplicatesPage - 1); reloadDuplicates(); });
+  document.querySelector("#duplicates-next").addEventListener("click", () => { duplicatesPage += 1; reloadDuplicates(); });
+  reloadDuplicates();  // fills in the count shown next to the heading
+
+  // ---- export to CSV: the browser downloads exactly what the panel is showing, all pages
+  function download(url) {
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "";  // the server names the file; this makes the browser save it, not open it
+    document.body.append(link);
+    link.click();
+    link.remove();
+  }
+  document.querySelector("#export-records").addEventListener("click", () => {
+    const columns = visibleColumns().map(column => column.key).join(",");
+    download(`/api/records.csv?${filterQuery({ columns })}`);
+  });
+  document.querySelector("#export-files").addEventListener("click", () => {
+    const query = new URLSearchParams();
+    for (const [param, id] of [["status", "#unprocessed-status"], ["reason", "#unprocessed-reason"]]) {
+      const value = document.querySelector(id).value;
+      if (value) query.set(param, value);
+    }
+    const search = document.querySelector("#unprocessed-search").value.trim();
+    if (search) query.set("q", search);
+    download(`/api/files.csv?${query}`);
+  });
+  document.querySelector("#export-duplicates").addEventListener("click", () => {
+    download(`/api/duplicate-groups.csv?${duplicatesQuery()}`);
+  });
+
+  // ---- compare mount points: what the other mounts have that the target does not
+  const compareBody = document.querySelector("#compare-body");
+  const comparePageSize = 50;
+  let comparePage = 1;
+  let compareMounts = [];
+  let compareHostPaths = {};
+  let compareTimer = null;
+
+  function checkedSources() {
+    return [...document.querySelectorAll("#compare-sources input:checked")].map(box => box.value);
+  }
+
+  function compareQuery(extra = {}) {
+    const query = new URLSearchParams({ target: document.querySelector("#compare-target").value, ...extra });
+    const sources = checkedSources();
+    if (sources.length) query.set("sources", sources.join(","));
+    query.set("rule", document.querySelector("#compare-rule").value);
+    const search = document.querySelector("#compare-search").value.trim();
+    if (search) query.set("q", search);
+    return query;
+  }
+
+  function buildSourceBoxes() {
+    const target = document.querySelector("#compare-target").value;
+    const holder = document.querySelector("#compare-sources");
+    holder.replaceChildren();
+    for (const mount of compareMounts.filter(item => item.mount !== target)) {
+      const label = document.createElement("label");
+      const box = document.createElement("input");
+      box.type = "checkbox";
+      box.value = mount.mount;
+      box.checked = true;
+      box.addEventListener("change", () => { comparePage = 1; reloadCompare(); });
+      label.append(box, ` ${mount.mount} (${mount.files} files)`);
+      holder.append(label);
+    }
+  }
+
+  async function loadCompareMounts() {
+    const response = await fetch("/api/compare");
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || "Could not list the mount points.");
+    compareMounts = data.mounts;
+    compareHostPaths = data.host_paths || {};
+    const select = document.querySelector("#compare-target");
+    const previous = select.value;
+    select.replaceChildren(...compareMounts.map(mount =>
+      Object.assign(document.createElement("option"), { value: mount.mount, textContent: `${mount.mount} — ${mount.files} files, ${formatBytes(mount.bytes)}` })));
+    // the largest mount (the archive) is the natural target
+    select.value = compareMounts.some(mount => mount.mount === previous) ? previous : (compareMounts[0] || {}).mount || "";
+    buildSourceBoxes();
+  }
+
+  async function loadCompare() {
+    if (!document.querySelector("#compare-target").value) {
+      document.querySelector("#compare-summary").textContent = "No files have been scanned yet.";
+      return;
+    }
+    const response = await fetch(`/api/compare?${compareQuery({ page: comparePage, page_size: comparePageSize })}`);
+    const data = await response.json();
+    const summary = document.querySelector("#compare-summary");
+    if (!response.ok) { summary.className = "compare-summary warn"; summary.textContent = data.error || "Could not compare."; return; }
+    const unknown = [data.target, ...data.sources].filter(mount => !compareHostPaths[mount]);
+    summary.className = `compare-summary ${data.total ? "" : "ok"}`;
+    summary.replaceChildren();
+    const lead = document.createElement("div");
+    lead.textContent = data.total
+      ? `${data.total} files (${formatBytes(data.total_bytes)}) are in ${data.sources.join(", ")} but not in ${data.target}: ` +
+        data.by_source.map(item => `${item.mount} ${item.files} (${formatBytes(item.bytes)})`).join(" · ")
+      : `Nothing is missing: every file of ${data.sources.join(", ")} is already in ${data.target}.`;
+    summary.append(lead);
+    if (data.total && unknown.length) {
+      const warning = document.createElement("div");
+      warning.textContent = `The copy script will contain placeholders to edit, because the app does not know the folder on your PC for: ${unknown.join(", ")}. Starting the app with start.ps1 fills them in.`;
+      summary.append(warning);
+    }
+    document.querySelector("#compare-count").textContent = data.total ? `(${data.total} files missing from ${data.target})` : "(nothing missing)";
+    compareBody.replaceChildren();
+    if (!data.files.length) {
+      const row = compareBody.insertRow();
+      const cell = row.insertCell();
+      cell.colSpan = 7;
+      cell.textContent = data.total ? "No more files." : "Nothing to show.";
+    }
+    for (const file of data.files) {
+      const row = compareBody.insertRow();
+      row.insertCell().textContent = file.mount;
+      row.insertCell().textContent = file.file_name;
+      const path = row.insertCell();
+      path.className = "path";
+      path.textContent = file.file_path;
+      row.insertCell().textContent = formatBytes(file.file_size);
+      row.insertCell().textContent = file.created_at;
+      const copyTo = row.insertCell();
+      copyTo.className = "path";
+      copyTo.textContent = file.copy_to;
+      const preview = row.insertCell();
+      if (file.preview) {
+        const view = document.createElement("button");
+        view.type = "button";
+        view.className = "view";
+        view.textContent = file.preview === "video" ? "Play" : "View";
+        view.addEventListener("click", () => openViewer(file));
+        preview.append(view);
+      } else {
+        preview.textContent = "–";
+      }
+    }
+    const first = data.total ? (comparePage - 1) * comparePageSize + 1 : 0;
+    const last = Math.min(comparePage * comparePageSize, data.total);
+    document.querySelector("#compare-page").textContent = `${first}–${last} of ${data.total} files`;
+    document.querySelector("#compare-prev").disabled = comparePage <= 1;
+    document.querySelector("#compare-next").disabled = last >= data.total;
+  }
+
+  const reloadCompare = () => loadCompare().catch(error => showMessage(error.message, "error"));
+  document.querySelector("#compare-panel").addEventListener("toggle", async event => {
+    if (!event.target.open) return;
+    try { await loadCompareMounts(); await loadCompare(); } catch (error) { showMessage(error.message, "error"); }
+  });
+  // Compare again: also re-reads the list of mount points, so a mount scanned since is picked up
+  const compareAgain = async () => {
+    comparePage = 1;
+    try { await loadCompareMounts(); await loadCompare(); } catch (error) { showMessage(error.message, "error"); }
+  };
+  document.querySelector("#compare-run").addEventListener("click", compareAgain);
+  document.querySelector("#compare-target").addEventListener("change", () => { buildSourceBoxes(); comparePage = 1; reloadCompare(); });
+  document.querySelector("#compare-rule").addEventListener("change", () => { comparePage = 1; reloadCompare(); });
+  document.querySelector("#compare-search").addEventListener("input", () => {
+    clearTimeout(compareTimer);
+    compareTimer = setTimeout(() => { comparePage = 1; reloadCompare(); }, 450);
+  });
+  document.querySelector("#compare-prev").addEventListener("click", () => { comparePage = Math.max(1, comparePage - 1); reloadCompare(); });
+  document.querySelector("#compare-next").addEventListener("click", () => { comparePage += 1; reloadCompare(); });
+  document.querySelector("#export-compare").addEventListener("click", () => download(`/api/compare.csv?${compareQuery()}`));
+  document.querySelector("#compare-script-ps").addEventListener("click", () => download(`/api/compare/script?${compareQuery({ style: "powershell" })}`));
+  document.querySelector("#compare-script-sh").addEventListener("click", () => download(`/api/compare/script?${compareQuery({ style: "bash" })}`));
+
+  // ---- sync: copy what the other mounts have and the target lacks
+  const syncResultLabels = { copied: "Copied", renamed: "Copied under another name", already_there: "Already there", failed: "Failed" };
+  const syncStatusLabels = { copying: "Copying", completed: "Completed", completed_with_errors: "Completed with errors", cancelled: "Cancelled", failed: "Failed", interrupted: "Interrupted" };
+  const syncStart = document.querySelector("#sync-start");
+  const syncCancel = document.querySelector("#sync-cancel");
+  const syncProgress = document.querySelector("#sync-progress");
+  let syncMounts = [];
+  let syncHostPaths = {};
+  let syncPlan = null;
+  let syncActiveJob = null;
+  let syncDetailsJob = null;
+  let syncDetailsPage = 1;
+
+  function syncSources() {
+    return [...document.querySelectorAll("#sync-sources input:checked")].map(box => box.value);
+  }
+
+  function syncQuery() {
+    const query = new URLSearchParams({ target: document.querySelector("#sync-target").value, rule: document.querySelector("#sync-rule").value });
+    const sources = syncSources();
+    if (sources.length) query.set("sources", sources.join(","));
+    return query;
+  }
+
+  function buildSyncSources() {
+    const target = document.querySelector("#sync-target").value;
+    const holder = document.querySelector("#sync-sources");
+    holder.replaceChildren();
+    for (const mount of syncMounts.filter(item => item.mount !== target)) {
+      const label = document.createElement("label");
+      const box = document.createElement("input");
+      box.type = "checkbox";
+      box.value = mount.mount;
+      box.checked = true;
+      box.addEventListener("change", () => reloadSyncPlan());
+      label.append(box, ` ${mount.mount} (${mount.files} files)`);
+      holder.append(label);
+    }
+  }
+
+  function restartCommand(name) {
+    // the command that starts the app again so the target can receive copies, using the PC folders the app knows
+    const pairs = Object.entries(syncHostPaths).map(([mount, folder]) => `"${mount.replace(/^\//, "")}=${folder}"`);
+    return `powershell -ExecutionPolicy Bypass -File .\\start.ps1 -SyncInto ${name} ${pairs.join(" ")}`.trim();
+  }
+
+  async function loadSyncMounts() {
+    const response = await fetch("/api/sync/plan");
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || "Could not list the mount points.");
+    syncMounts = data.mounts;
+    syncHostPaths = data.host_paths || {};
+    const select = document.querySelector("#sync-target");
+    const previous = select.value;
+    select.replaceChildren(...syncMounts.map(mount => Object.assign(document.createElement("option"), {
+      value: mount.mount,
+      textContent: `${mount.mount} — ${mount.files} files, ${formatBytes(mount.bytes)} — ${mount.writable ? "ready to receive copies" : "read-only"}`,
+    })));
+    select.value = syncMounts.some(mount => mount.mount === previous) ? previous : (syncMounts[0] || {}).mount || "";
+    buildSyncSources();
+  }
+
+  async function loadSyncPlan() {
+    const box = document.querySelector("#sync-plan");
+    syncPlan = null;
+    syncStart.disabled = true;
+    if (!document.querySelector("#sync-target").value) { box.className = "sync-box"; box.textContent = "No files have been scanned yet."; return; }
+    const response = await fetch(`/api/sync/plan?${syncQuery()}`);
+    const data = await response.json();
+    box.replaceChildren();
+    if (!response.ok) { box.className = "sync-box warn"; box.textContent = data.error || "Could not make a plan."; return; }
+    const plan = data.plan;
+    syncPlan = plan;
+    const line = text => { const div = document.createElement("div"); div.textContent = text; box.append(div); return div; };
+    if (!plan.total) {
+      box.className = "sync-box ok";
+      line(`Nothing to copy: every file of ${plan.sources.join(", ")} is already in ${plan.target}.`);
+      return;
+    }
+    box.className = "sync-box";
+    line(`${plan.total} files (${formatBytes(plan.total_bytes)}) will be copied into ${plan.by_source.map(item => item.folder + "/").join(" and ")}. ` +
+         `Free space on ${plan.target}: ${formatBytes(plan.free_bytes)}.`);
+    if (!plan.target_exists) {
+      box.className = "sync-box warn";
+      line(`${plan.target} is not mounted in the container.`);
+    } else if (!plan.writable) {
+      box.className = "sync-box warn";
+      const blocked = plan.read_only_folders.length ? plan.read_only_folders.join(", ") : plan.target;
+      line(`PhotoMe may not write to ${blocked} (read-only), so it cannot copy there. To allow it, stop the app and start it again with ${plan.target} opened for syncing. Only its _from-<source> folders become writable; the rest of ${plan.target} stays read-only:`);
+      const command = document.createElement("pre");
+      command.textContent = restartCommand(plan.target.replace(/^\//, ""));
+      box.append(command);
+    } else if (!plan.enough_space) {
+      box.className = "sync-box warn";
+      line(`Not enough free space: ${formatBytes(plan.total_bytes)} to copy plus ${formatBytes(plan.space_margin)} to keep free.`);
+    } else {
+      syncStart.disabled = syncActiveJob !== null;
+    }
+  }
+
+  const reloadSyncPlan = () => loadSyncPlan().catch(error => showMessage(error.message, "error"));
+
+  function syncSummary(job) {
+    const done = job.copied_files + job.skipped_files + job.failed_files;
+    const bytes = job.copied_bytes + (job.current_bytes || 0);
+    const parts = [`${done} of ${job.total_files} files`, `${formatBytes(bytes)} of ${formatBytes(job.total_bytes)}`];
+    if (job.status === "copying" && job.bytes_per_second) parts.push(`${formatBytes(job.bytes_per_second)}/s`);
+    if (job.failed_files) parts.push(`${job.failed_files} failed`);
+    if (job.skipped_files) parts.push(`${job.skipped_files} already there`);
+    if (job.started_local) parts.push(`started ${job.started_local}`);
+    if (job.elapsed_seconds !== null) parts.push(`time used ${formatDuration(job.elapsed_seconds)}`);
+    return parts.join("; ");
+  }
+
+  async function monitorSync(jobId) {
+    syncActiveJob = jobId;
+    syncStart.disabled = true;
+    syncCancel.hidden = false;
+    syncCancel.disabled = false;
+    const status = document.querySelector("#sync-status");
+    try {
+      while (true) {
+        const response = await fetch(`/api/sync/${jobId}`);
+        const job = await response.json();
+        if (!response.ok) throw new Error(job.error || "Could not read the sync progress.");
+        syncProgress.hidden = job.status !== "copying";
+        if (job.status === "copying") {
+          syncProgress.max = job.total_bytes || job.total_files || 1;
+          syncProgress.value = job.total_bytes ? job.copied_bytes + (job.current_bytes || 0) : job.copied_files + job.skipped_files;
+          status.className = "";
+          status.textContent = `Copying ${job.target} ← ${job.sources.join(", ")}: ${syncSummary(job)}.` + (job.current_file ? ` Now: ${job.current_file}` : "");
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          continue;
+        }
+        const failed = job.status === "failed" || job.status === "completed_with_errors";
+        status.className = failed || job.status === "cancelled" || job.status === "interrupted" ? "error" : "success";
+        status.textContent = `${syncStatusLabels[job.status] || job.status}: ${syncSummary(job)}.` +
+          (job.errors.length ? ` First problem: ${job.errors[0]}` : "") +
+          (job.status === "cancelled" ? " Files already copied were kept; start the sync again to continue." : "") +
+          (job.status === "interrupted" ? " The app restarted while copying; start the sync again to continue." : "");
+        break;
+      }
+    } catch (error) {
+      status.className = "error";
+      status.textContent = error.message;
+    } finally {
+      syncActiveJob = null;
+      syncCancel.hidden = true;
+      syncProgress.hidden = true;
+      reloadSyncPlan();
+      loadSyncHistory().catch(() => {});
+      loadRecords().catch(() => {});
+      reloadUnprocessed();
+    }
+  }
+
+  async function startSync() {
+    if (!syncPlan || !syncPlan.total) return;
+    const folders = syncPlan.by_source.map(item => `${item.folder}/  (${item.files} files, ${formatBytes(item.bytes)})`).join("\n");
+    const verify = document.querySelector("#sync-verify").checked;
+    if (!window.confirm(`Copy ${syncPlan.total} files (${formatBytes(syncPlan.total_bytes)}) into:\n\n${folders}\n\nNothing is overwritten or deleted.${verify ? " Every copy will be verified with a checksum." : ""}`)) return;
+    syncStart.disabled = true;
+    const response = await fetch("/api/sync", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ target: syncPlan.target, sources: syncPlan.sources, rule: syncPlan.rule, verify }),
+    });
+    const data = await response.json();
+    if (!response.ok) {
+      const status = document.querySelector("#sync-status");
+      status.className = "error";
+      status.textContent = data.error || "Could not start the sync.";
+      reloadSyncPlan();
+      return;
+    }
+    monitorSync(data.job_id);
+  }
+
+  async function loadSyncHistory() {
+    const response = await fetch("/api/sync/jobs?limit=10");
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || "Could not load the sync history.");
+    const body = document.querySelector("#sync-history");
+    body.replaceChildren();
+    if (!data.jobs.length) {
+      const cell = body.insertRow().insertCell();
+      cell.colSpan = 9;
+      cell.textContent = "No syncs yet.";
+    }
+    for (const job of data.jobs) {
+      const row = body.insertRow();
+      row.insertCell().textContent = job.started_local || job.created_at;
+      row.insertCell().textContent = job.target;
+      row.insertCell().textContent = job.sources.join(", ");
+      row.insertCell().textContent = syncStatusLabels[job.status] || job.status;
+      row.insertCell().textContent = `${job.copied_files} (${formatBytes(job.copied_bytes)})`;
+      row.insertCell().textContent = job.skipped_files;
+      row.insertCell().textContent = job.failed_files;
+      row.insertCell().textContent = job.elapsed_seconds === null ? "" : formatDuration(job.elapsed_seconds);
+      const details = document.createElement("button");
+      details.type = "button";
+      details.className = "secondary";
+      details.textContent = "Details";
+      details.addEventListener("click", () => { syncDetailsJob = job; syncDetailsPage = 1; reloadSyncDetails(); });
+      row.insertCell().append(details);
+    }
+    const last = data.jobs[0];
+    document.querySelector("#sync-count").textContent = last
+      ? `(last: ${(syncStatusLabels[last.status] || last.status).toLowerCase()}, ${last.copied_files} files copied)` : "";
+    if (last && last.status === "copying" && syncActiveJob === null) monitorSync(last.id);
+  }
+
+  async function loadSyncDetails() {
+    const job = syncDetailsJob;
+    if (!job) return;
+    const query = new URLSearchParams({ page: syncDetailsPage, page_size: 50 });
+    const filter = document.querySelector("#sync-details-status").value;
+    if (filter) query.set("status", filter);
+    const response = await fetch(`/api/sync/${job.id}/files?${query}`);
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || "Could not load the results.");
+    document.querySelector("#sync-details").hidden = false;
+    document.querySelector("#sync-details-title").textContent =
+      `Sync ${job.id}: ${job.sources.join(", ")} → ${job.target} (` +
+      Object.entries(data.by_status).map(([key, n]) => `${syncResultLabels[key] || key}: ${n}`).join(", ") + ")";
+    const body = document.querySelector("#sync-details-body");
+    body.replaceChildren();
+    if (!data.files.length) body.insertRow().insertCell().textContent = "No files.";
+    for (const file of data.files) {
+      const row = body.insertRow();
+      row.insertCell().textContent = syncResultLabels[file.status] || file.status;
+      row.insertCell().textContent = file.source_path;
+      row.insertCell().textContent = file.destination_path || "";
+      row.insertCell().textContent = formatBytes(file.file_size);
+      row.insertCell().textContent = file.detail || "";
+      row.insertCell().textContent = file.finished_at;
+    }
+    const first = data.total ? (syncDetailsPage - 1) * 50 + 1 : 0;
+    const end = Math.min(syncDetailsPage * 50, data.total);
+    document.querySelector("#sync-details-page").textContent = `${first}–${end} of ${data.total} files`;
+    document.querySelector("#sync-details-prev").disabled = syncDetailsPage <= 1;
+    document.querySelector("#sync-details-next").disabled = end >= data.total;
+  }
+
+  const reloadSyncDetails = () => loadSyncDetails().catch(error => showMessage(error.message, "error"));
+  document.querySelector("#sync-panel").addEventListener("toggle", async event => {
+    if (!event.target.open) return;
+    try { await loadSyncMounts(); await loadSyncPlan(); await loadSyncHistory(); } catch (error) { showMessage(error.message, "error"); }
+  });
+  document.querySelector("#sync-target").addEventListener("change", () => { buildSyncSources(); reloadSyncPlan(); });
+  document.querySelector("#sync-rule").addEventListener("change", () => reloadSyncPlan());
+  syncStart.addEventListener("click", () => startSync().catch(error => showMessage(error.message, "error")));
+  syncCancel.addEventListener("click", async () => {
+    if (syncActiveJob === null) return;
+    syncCancel.disabled = true;
+    document.querySelector("#sync-status").textContent = "Cancelling — finishing the file being copied…";
+    await fetch(`/api/sync/${syncActiveJob}/cancel`, { method: "POST" });
+  });
+  document.querySelector("#sync-details-status").addEventListener("change", () => { syncDetailsPage = 1; reloadSyncDetails(); });
+  document.querySelector("#sync-details-prev").addEventListener("click", () => { syncDetailsPage = Math.max(1, syncDetailsPage - 1); reloadSyncDetails(); });
+  document.querySelector("#sync-details-next").addEventListener("click", () => { syncDetailsPage += 1; reloadSyncDetails(); });
+  document.querySelector("#sync-details-close").addEventListener("click", () => { document.querySelector("#sync-details").hidden = true; });
+  document.querySelector("#sync-details-export").addEventListener("click", () => {
+    if (!syncDetailsJob) return;
+    const filter = document.querySelector("#sync-details-status").value;
+    download(`/api/sync/${syncDetailsJob.id}/files.csv${filter ? `?status=${filter}` : ""}`);
+  });
+  // a sync keeps running when the page is closed: pick it up again, and show the count in the heading
+  loadSyncHistory().catch(() => {});
+
+  // ---- mount points: which folder on the PC is behind each one, and what changed when
+  const accessLabels = { "read-only": "Read-only", "add-only": "Add-only (_from-* folders)", "read-write": "Read-write" };
+  const mountEventLabels = { mounted: "Mounted", changed: "Points at another folder", access_changed: "Access changed", unmounted: "No longer mounted", renamed: "Renamed" };
+  let mountsPage = 1;
+  let mountsMounted = null;   // how many mount points are mounted now
+  let mountsLastChange = null;  // the date of the newest history entry
+
+  function renderMountsHeading() {
+    const parts = [];
+    if (mountsMounted !== null) parts.push(`${mountsMounted} mounted`);
+    if (mountsLastChange) parts.push(`last change ${mountsLastChange}`);
+    document.querySelector("#mounts-count").textContent = parts.length ? `(${parts.join(", ")})` : "";
+  }
+
+  async function loadMountPoints() {
+    const response = await fetch("/api/mount-points");
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || "Could not load the mount points.");
+    const note = document.querySelector("#mounts-note");
+    note.hidden = data.recording;
+    note.textContent = data.recording ? "" :
+      "The app was started without the start script, so it does not know the folders on your PC behind the mount points, and nothing is being recorded. Start it with start.ps1 (or start.sh).";
+    const body = document.querySelector("#mounts-body");
+    body.replaceChildren();
+    if (!data.mounts.length) body.insertRow().insertCell().textContent = "Nothing recorded yet. The mount points are noted when the app starts.";
+    for (const mount of data.mounts) {
+      const row = body.insertRow();
+      row.insertCell().textContent = mount.mount;
+      row.insertCell().textContent = mount.host_path || "unknown";
+      const access = row.insertCell();
+      access.textContent = mount.mode ? (accessLabels[mount.mode] || mount.mode) : "";
+      if (mount.mode_now && mount.mode_now !== mount.mode) access.textContent += ` — now ${accessLabels[mount.mode_now] || mount.mode_now}`;
+      row.insertCell().textContent = `${mount.files} (${formatBytes(mount.bytes)})`;
+      row.insertCell().textContent = mount.first_seen_at || "";
+      row.insertCell().textContent = mount.last_seen_at || "";
+      const status = row.insertCell();
+      const badge = document.createElement("span");
+      badge.className = `badge${mount.status === "mounted" ? "" : " duplicate"}`;
+      badge.textContent = mount.status === "mounted" ? "Mounted" : mount.status === "unmounted" ? `Not mounted since ${mount.unmounted_at}` : "Not recorded";
+      status.append(badge);
+    }
+    mountsMounted = data.mounts.length ? data.mounts.filter(mount => mount.status === "mounted").length : null;
+    renderMountsHeading();
+  }
+
+  function mountHistoryQuery(extra = {}) {
+    const query = new URLSearchParams(extra);
+    for (const [param, id] of [["mount", "#mounts-filter-mount"], ["event", "#mounts-filter-event"]]) {
+      const value = document.querySelector(id).value;
+      if (value) query.set(param, value);
+    }
+    return query;
+  }
+
+  async function loadMountHistory() {
+    const response = await fetch(`/api/mount-history?${mountHistoryQuery({ page: mountsPage, page_size: 25 })}`);
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || "Could not load the history.");
+    const filter = document.querySelector("#mounts-filter-mount");
+    if (filter.options.length - 1 !== data.mounts.length) {
+      const chosen = filter.value;
+      filter.replaceChildren(new Option("All mount points", ""), ...data.mounts.map(mount => new Option(mount, mount)));
+      filter.value = chosen;
+    }
+    const body = document.querySelector("#mounts-history");
+    body.replaceChildren();
+    if (!data.events.length) body.insertRow().insertCell().textContent = "No history yet.";
+    for (const event of data.events) {
+      const row = body.insertRow();
+      row.insertCell().textContent = event.recorded_at;
+      row.insertCell().textContent = event.mount;
+      row.insertCell().textContent = mountEventLabels[event.event] || event.event;
+      row.insertCell().textContent = event.host_path || "";
+      row.insertCell().textContent = event.previous_host_path || "";
+      const access = row.insertCell();
+      access.textContent = event.mode ? (accessLabels[event.mode] || event.mode) : "";
+      if (event.previous_mode) access.textContent += ` (was ${accessLabels[event.previous_mode] || event.previous_mode})`;
+      row.insertCell().textContent = event.detail || "";
+    }
+    const first = data.total ? (mountsPage - 1) * 25 + 1 : 0;
+    const last = Math.min(mountsPage * 25, data.total);
+    document.querySelector("#mounts-page").textContent = `${first}–${last} of ${data.total} events`;
+    document.querySelector("#mounts-prev").disabled = mountsPage <= 1;
+    document.querySelector("#mounts-next").disabled = last >= data.total;
+    if (data.events.length && mountsPage === 1 && !filter.value && !document.querySelector("#mounts-filter-event").value) {
+      mountsLastChange = data.events[0].recorded_at;  // only an unfiltered first page shows the newest entry
+      renderMountsHeading();
+    }
+  }
+
+  const reloadMounts = () => Promise.all([loadMountPoints(), loadMountHistory()]).catch(error => showMessage(error.message, "error"));
+  document.querySelector("#mounts-panel").addEventListener("toggle", event => { if (event.target.open) reloadMounts(); });
+  for (const id of ["#mounts-filter-mount", "#mounts-filter-event"]) {
+    document.querySelector(id).addEventListener("change", () => { mountsPage = 1; loadMountHistory().catch(error => showMessage(error.message, "error")); });
+  }
+  document.querySelector("#mounts-prev").addEventListener("click", () => { mountsPage = Math.max(1, mountsPage - 1); loadMountHistory().catch(error => showMessage(error.message, "error")); });
+  document.querySelector("#mounts-next").addEventListener("click", () => { mountsPage += 1; loadMountHistory().catch(error => showMessage(error.message, "error")); });
+  document.querySelector("#export-mounts").addEventListener("click", () => download(`/api/mount-history.csv?${mountHistoryQuery()}`));
+  reloadMounts();  // fills in the count shown next to the heading
+
+  // ---- plan a new library: year / month / location folders, duplicates left out
+  const dateSourceLabels = { camera: "Camera date", video: "Video date", modified: "Edit date", file: "File date", none: "No date" };
+  const layoutStatus = document.querySelector("#layout-status");
+  let layoutSelection = {};   // the folder chosen in the tree: { year, month, location }
+  let layoutPage = 1;
+  let layoutTimer = null;
+  let layoutBuilding = false;
+
+  function layoutOptions() {
+    return {
+      mounts: [...document.querySelectorAll("#layout-mounts input:checked")].map(box => box.value),
+      kinds: [...document.querySelectorAll(".layout-kind:checked")].map(box => box.value),
+      duplicates: document.querySelector("#layout-duplicates").value,
+      prefer: document.querySelector("#layout-prefer").value,
+      location: document.querySelector("#layout-location").value,
+      month_style: document.querySelector("#layout-month").value,
+      use_file_date: document.querySelector("#layout-file-date").checked,
+      root: document.querySelector("#layout-root").value.trim(),
+    };
+  }
+
+  function applyLayoutOptions(options) {
+    for (const box of document.querySelectorAll("#layout-mounts input")) box.checked = options.mounts.includes(box.value);
+    for (const box of document.querySelectorAll(".layout-kind")) box.checked = options.kinds.includes(box.value);
+    document.querySelector("#layout-duplicates").value = options.duplicates;
+    document.querySelector("#layout-prefer").value = options.prefer;
+    document.querySelector("#layout-location").value = options.location;
+    document.querySelector("#layout-month").value = options.month_style;
+    document.querySelector("#layout-file-date").checked = options.use_file_date;
+    document.querySelector("#layout-root").value = options.root || "";
+  }
+
+  function buildLayoutMounts(mounts, chosen) {
+    const holder = document.querySelector("#layout-mounts");
+    holder.replaceChildren();
+    const prefer = document.querySelector("#layout-prefer");
+    const keep = prefer.value;
+    prefer.replaceChildren(new Option("the oldest record", ""));
+    for (const mount of mounts) {
+      const label = document.createElement("label");
+      const box = document.createElement("input");
+      box.type = "checkbox";
+      box.value = mount.mount;
+      box.checked = chosen.includes(mount.mount);
+      label.append(box, ` ${mount.mount} (${mount.files} files)`);
+      holder.append(label);
+      prefer.add(new Option(`${mount.mount} (if it has a copy)`, mount.mount));
+    }
+    prefer.value = [...prefer.options].some(option => option.value === keep) ? keep : "";
+  }
+
+  function renderLayoutSummary(info, current) {
+    const box = document.querySelector("#layout-summary");
+    const warning = document.querySelector("#layout-warning");
+    const notes = [];
+    if (current.dates_pending > 0) notes.push(`The date of ${current.dates_pending} records is still being worked out in the background. A plan built now puts those files under "Unknown date"; build it again when that has finished.`);
+    if (info && info.status === "ready" && info.stale) notes.push("The records have changed since this plan was built (a scan or a sync). Build the plan again to include the changes.");
+    warning.hidden = !notes.length;
+    warning.textContent = notes.join(" ");
+    if (!info || info.status !== "ready") { box.hidden = true; return; }
+    const stats = info.stats;
+    const sources = Object.entries(stats.date_sources).map(([key, n]) => `${dateSourceLabels[key] || key}: ${n}`).join(" · ");
+    box.hidden = false;
+    box.className = "sync-box ok";
+    box.replaceChildren();
+    const line = text => { const div = document.createElement("div"); div.textContent = text; box.append(div); };
+    line(`Plan: ${stats.kept} files (${formatBytes(stats.kept_bytes)}) from ${stats.considered} considered (${formatBytes(stats.considered_bytes)}).` +
+         (stats.first_year ? ` Years ${stats.first_year}–${stats.last_year}.` : ""));
+    line(stats.removed
+      ? `Left out as duplicates: ${stats.removed} files (${formatBytes(stats.removed_bytes)}). Their originals are kept.`
+      : "No duplicates were left out.");
+    line(`Dates come from — ${sources}.`);
+    const odd = [];
+    if (stats.unknown_date) odd.push(`${stats.unknown_date} files have no usable date and go to "${info.options.unknown_date}"`);
+    if (stats.unknown_location && info.options.location !== "none") odd.push(`${stats.unknown_location} have no location`);
+    if (stats.renamed) odd.push(`${stats.renamed} were numbered, e.g. "name (2).jpg", because another file would have the same name in the same folder`);
+    if (odd.length) line(odd.join("; ") + ".");
+    line(`Built ${info.built_at} in ${stats.seconds}s.`);
+    document.querySelector("#layout-count").textContent = `(${stats.kept} files, ${stats.removed} duplicates left out)`;
+  }
+
+  async function loadLayout() {
+    const response = await fetch("/api/layout");
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || "Could not load the plan.");
+    const options = data.info ? data.info.options : data.defaults;
+    buildLayoutMounts(data.mounts, options.mounts);
+    applyLayoutOptions(options);
+    renderLayoutSummary(data.info, data.current);
+    const ready = data.info && data.info.status === "ready";
+    document.querySelector("#layout-browser").hidden = !ready;
+    document.querySelector("#layout-copy").hidden = !ready;
+    if (ready) loadCopy().catch(error => showMessage(error.message, "error"));
+    layoutStatus.className = data.info && data.info.status === "failed" ? "error" : "";
+    layoutStatus.textContent = data.info && data.info.status === "failed" ? `The last plan failed: ${data.info.error}` : "";
+    if (data.running || (data.info && data.info.status === "building")) monitorLayout();
+    else if (ready) { layoutSelection = {}; layoutPage = 1; await loadLayoutTree(); await loadLayoutFiles(); }
+  }
+
+  async function monitorLayout() {
+    if (layoutBuilding) return;
+    layoutBuilding = true;
+    document.querySelector("#layout-build").disabled = true;
+    layoutStatus.className = "";
+    const waited = Date.now();
+    try {
+      while (true) {
+        layoutStatus.textContent = `Building the plan… ${Math.round((Date.now() - waited) / 1000)}s (a large library takes up to a minute or two)`;
+        await new Promise(resolve => setTimeout(resolve, 1500));
+        const data = await (await fetch("/api/layout")).json();
+        if (!data.running && data.info && data.info.status !== "building") break;
+      }
+    } finally {
+      layoutBuilding = false;
+      document.querySelector("#layout-build").disabled = false;
+    }
+    layoutStatus.textContent = "";
+    await loadLayout();
+  }
+
+  async function startLayoutBuild() {
+    const response = await fetch("/api/layout/build", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(layoutOptions()) });
+    const data = await response.json();
+    if (!response.ok) { layoutStatus.className = "error"; layoutStatus.textContent = data.error || "Could not start the plan."; return; }
+    monitorLayout();
+  }
+
+  function selectFolder(selection, title) {
+    layoutSelection = selection;
+    layoutPage = 1;
+    document.querySelector("#layout-files-title").textContent = title;
+    for (const node of document.querySelectorAll("#layout-tree .selected")) node.classList.remove("selected");
+    loadLayoutFiles().catch(error => showMessage(error.message, "error"));
+  }
+
+  function folderNode(level, folder, parent, options) {
+    const path = { ...parent };
+    path[level] = folder.name;
+    const label = level === "location" ? folder.name : folder.name || options.unknown_date;
+    const text = `${label || "(no month)"}`;
+    const counts = `${folder.files} · ${formatBytes(folder.bytes)}`;
+    const title = ["year", "month", "location"].map(key => path[key]).filter(value => value !== undefined && value !== "").join(" / ");
+    const isLeaf = level === "location" || (level === "month" && options.location === "none") ||
+                   (level === "year" && folder.name === options.unknown_date && options.location === "none");
+    const row = document.createElement("div");
+    const header = isLeaf ? row : document.createElement("summary");
+    if (isLeaf) row.className = "leaf";
+    const name = document.createElement("span");
+    name.textContent = text;
+    const count = document.createElement("span");
+    count.className = "count";
+    count.textContent = counts + (folder.removed ? ` · ${folder.removed} copies left out` : "");
+    header.append(name, count);
+    header.addEventListener("click", () => selectFolder(path, `Files in ${title}`));
+    if (isLeaf) return row;
+    const details = document.createElement("details");
+    details.append(header);
+    let loaded = false;
+    details.addEventListener("toggle", async () => {
+      if (!details.open || loaded) return;
+      loaded = true;
+      const query = new URLSearchParams();
+      for (const key of ["year", "month"]) if (path[key] !== undefined) query.set(key, path[key]);
+      const data = await (await fetch(`/api/layout/tree?${query}`)).json();
+      for (const child of data.folders) details.append(folderNode(data.level, child, path, options));
+    });
+    return details;
+  }
+
+  async function loadLayoutTree() {
+    const data = await (await fetch("/api/layout/tree")).json();
+    const info = (await (await fetch("/api/layout")).json()).info;
+    const tree = document.querySelector("#layout-tree");
+    tree.replaceChildren();
+    for (const folder of data.folders) tree.append(folderNode("year", folder, {}, info.options));
+    document.querySelector("#layout-files-title").textContent = "All files in the plan";
+  }
+
+  async function loadLayoutFiles() {
+    const query = new URLSearchParams({ page: layoutPage, page_size: 50 });
+    for (const key of ["year", "month", "location"]) if (layoutSelection[key] !== undefined) query.set(key, layoutSelection[key]);
+    const search = document.querySelector("#layout-search").value.trim();
+    if (search) query.set("q", search);
+    const data = await (await fetch(`/api/layout/files?${query}`)).json();
+    const body = document.querySelector("#layout-files");
+    body.replaceChildren();
+    if (!data.files.length) body.insertRow().insertCell().textContent = "No files.";
+    for (const file of data.files) {
+      const row = body.insertRow();
+      row.insertCell().textContent = file.source_path;
+      const target = row.insertCell();
+      target.className = "path";
+      target.textContent = file.new_path;
+      if (file.renamed) target.title = "Numbered because another file would have the same name in this folder";
+      row.insertCell().textContent = formatBytes(file.size);
+      row.insertCell().textContent = dateSourceLabels[file.date_source] || file.date_source;
+      row.insertCell().textContent = file.copies_removed || "";
+      const preview = row.insertCell();
+      if (file.preview) {
+        const view = document.createElement("button");
+        view.type = "button";
+        view.className = "view";
+        view.textContent = file.preview === "video" ? "Play" : "View";
+        view.addEventListener("click", () => openViewer({ id: file.record_id, file_name: file.new_name, file_path: file.source_path, preview: file.preview }));
+        preview.append(view);
+      } else preview.textContent = "–";
+    }
+    const first = data.total ? (layoutPage - 1) * 50 + 1 : 0;
+    const last = Math.min(layoutPage * 50, data.total);
+    document.querySelector("#layout-page").textContent = `${first}–${last} of ${data.total} files`;
+    document.querySelector("#layout-prev").disabled = layoutPage <= 1;
+    document.querySelector("#layout-next").disabled = last >= data.total;
+  }
+
+  // ---- copy the plan to a new location
+  const copyStatus = document.querySelector("#layout-copy-status");
+  let copyWatching = false;
+
+  function describeCopy(job) {
+    const bytes = job.copied_bytes + (job.current_bytes || 0);
+    const parts = [`${job.copied_files} of ${job.total_files} files copied (${formatBytes(job.copied_bytes)} of ${formatBytes(job.total_bytes)})`];
+    if (job.skipped_files) parts.push(`${job.skipped_files} already there`);
+    if (job.failed_files) parts.push(`${job.failed_files} failed`);
+    if (job.status === "copying") {
+      parts.push(`${formatDuration(job.elapsed_seconds)} so far`);
+      if (job.bytes_per_second) parts.push(`${formatBytes(job.bytes_per_second)}/s`);
+      if (job.current_file) parts.push(`now: ${job.current_file}`);
+    } else {
+      const label = { completed: "Finished", completed_with_errors: "Finished with errors", cancelled: "Stopped", failed: "Failed", interrupted: "Interrupted (the app stopped); run it again to continue" };
+      parts.unshift(`${label[job.status] || job.status} — ${job.destination}`);
+      parts.push(`took ${formatDuration(job.elapsed_seconds)}`);
+    }
+    return parts.join(" · ");
+  }
+
+  function showCopy(data) {
+    const job = data.job;
+    const progress = document.querySelector("#layout-copy-progress");
+    document.querySelector("#layout-destination-list").replaceChildren(
+      ...data.destinations.filter(item => item.access === "read-write").map(item => new Option(item.mount)));
+    document.querySelector("#layout-copy-start").disabled = data.running;
+    document.querySelector("#layout-copy-stop").hidden = !data.running;
+    document.querySelector("#layout-build").disabled = data.running || layoutBuilding;
+    if (!job) { progress.hidden = true; return; }
+    if (!document.querySelector("#layout-destination").value) document.querySelector("#layout-destination").value = job.destination;
+    copyStatus.className = job.status === "failed" || job.failed_files ? "error" : "";
+    copyStatus.textContent = describeCopy(job);
+    progress.hidden = false;
+    progress.value = job.total_bytes ? Math.min(100, 100 * (job.copied_bytes + (job.current_bytes || 0) + 0) / job.total_bytes) : 0;
+    const errors = document.querySelector("#layout-copy-errors");
+    errors.replaceChildren(...job.errors.slice(0, 20).map(text => Object.assign(document.createElement("div"), { textContent: text })));
+  }
+
+  async function loadCopy() {
+    const data = await (await fetch("/api/layout/copy")).json();
+    showCopy(data);
+    if (data.running) watchCopy();
+  }
+
+  async function watchCopy() {
+    if (copyWatching) return;
+    copyWatching = true;
+    try {
+      while (true) {
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        const data = await (await fetch("/api/layout/copy")).json();
+        showCopy(data);
+        if (!data.running) break;
+      }
+    } finally { copyWatching = false; }
+  }
+
+  async function checkCopyFolder() {
+    const destination = document.querySelector("#layout-destination").value.trim();
+    const data = await (await fetch("/api/layout/copy/check", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ destination }) })).json();
+    if (data.error || !data.ok) { copyStatus.className = "error"; copyStatus.textContent = data.error; return null; }
+    copyStatus.className = data.enough_space ? "" : "error";
+    copyStatus.textContent = `${data.destination} can be used${data.exists ? "" : " (it will be created)"}. The plan needs ${formatBytes(data.bytes)} for ${data.files} files; ${formatBytes(data.free_bytes)} is free there` +
+      (data.enough_space ? "." : `, which is not enough (${formatBytes(data.space_margin)} is also kept spare).`);
+    return data;
+  }
+
+  async function startCopy() {
+    const check = await checkCopyFolder();
+    if (!check || !check.enough_space) return;
+    if (!confirm(`Copy ${check.files} files (${formatBytes(check.bytes)}) into ${check.destination}?\n\nNothing in the archive is changed. Files already there are never overwritten.`)) return;
+    const response = await fetch("/api/layout/copy", { method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ destination: check.destination, verify: document.querySelector("#layout-verify").checked }) });
+    const data = await response.json();
+    if (!response.ok) { copyStatus.className = "error"; copyStatus.textContent = data.error; return; }
+    await loadCopy();
+  }
+
+  function layoutExportQuery() {
+    const query = new URLSearchParams();
+    for (const key of ["year", "month", "location"]) if (layoutSelection[key] !== undefined) query.set(key, layoutSelection[key]);
+    const search = document.querySelector("#layout-search").value.trim();
+    if (search) query.set("q", search);
+    return query;
+  }
+
+  document.querySelector("#layout-panel").addEventListener("toggle", event => { if (event.target.open) loadLayout().catch(error => showMessage(error.message, "error")); });
+  document.querySelector("#layout-build").addEventListener("click", () => startLayoutBuild().catch(error => showMessage(error.message, "error")));
+  document.querySelector("#layout-search").addEventListener("input", () => {
+    clearTimeout(layoutTimer);
+    layoutTimer = setTimeout(() => { layoutPage = 1; loadLayoutFiles().catch(error => showMessage(error.message, "error")); }, 400);
+  });
+  document.querySelector("#layout-prev").addEventListener("click", () => { layoutPage = Math.max(1, layoutPage - 1); loadLayoutFiles(); });
+  document.querySelector("#layout-next").addEventListener("click", () => { layoutPage += 1; loadLayoutFiles(); });
+  document.querySelector("#layout-copy-check").addEventListener("click", () => checkCopyFolder().catch(error => showMessage(error.message, "error")));
+  document.querySelector("#layout-copy-start").addEventListener("click", () => startCopy().catch(error => showMessage(error.message, "error")));
+  document.querySelector("#layout-copy-stop").addEventListener("click", async () => {
+    await fetch("/api/layout/copy/cancel", { method: "POST" });
+    copyStatus.textContent = "Stopping after the current file…";
+  });
+  document.querySelector("#layout-export").addEventListener("click", () => download(`/api/layout/files.csv?${layoutExportQuery()}`));
+  document.querySelector("#layout-export-removed").addEventListener("click", () => download("/api/layout/removed.csv"));
+
   // A second horizontal scrollbar above the table, kept in step with the one below it.
   const scrollTop = document.querySelector("#scroll-top");
   const scrollTopInner = document.querySelector("#scroll-top-inner");
@@ -656,14 +2089,35 @@
     }
   }
 
+  function formatDuration(totalSeconds) {
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+    const pad = value => String(value).padStart(2, "0");
+    if (hours) return `${hours}h ${pad(minutes)}m ${pad(seconds)}s`;
+    if (minutes) return `${minutes}m ${pad(seconds)}s`;
+    return `${seconds}s`;
+  }
+
   function scanProgress(job) {
+    const parts = [scanCounts(job)];
+    if (job.started_local) parts.push(`started ${job.started_local}`);
+    if (job.elapsed_seconds !== null && job.elapsed_seconds !== undefined) {
+      parts.push(`time used ${formatDuration(job.elapsed_seconds)}`);
+    }
+    return parts.join("; ");
+  }
+
+  function scanCounts(job) {
     if (job.phase !== "listing" && job.total_files) {
       const percent = Math.floor((100 * job.processed_files) / job.total_files);
-      return `${percent}% — ${job.processed_files} of ${job.total_files} files checked${job.skipped_files ? `; ${job.skipped_files} already in the database skipped` : ""}; ${job.records_added} metadata records added`;
+      return `${percent}% — ${job.processed_files} of ${job.total_files} files checked${job.skipped_files ? `; ${job.skipped_files} already in the database skipped` : ""}; ${job.records_added} metadata records added`
+        + (job.unprocessed_files ? `; ${job.unprocessed_files} not processed` : "");
     }
     if (job.phase === "listing") return `listing files… ${job.total_files} found so far`;
     const skipped = job.skipped_files ? `; ${job.skipped_files} already in the database skipped` : "";
-    return `${job.processed_files} of ${job.total_files} files checked${skipped}; ${job.records_added} metadata records added`;
+    return `${job.processed_files} of ${job.total_files} files checked${skipped}; ${job.records_added} metadata records added`
+      + (job.unprocessed_files ? `; ${job.unprocessed_files} not processed` : "");
   }
 
   async function monitorScan(jobId) {
@@ -680,7 +2134,7 @@
         updateProgressBar(job);
         if (job.status === "scanning") {
           showMessage(cancelling
-            ? `Cancelling — finishing the batch being read (up to about 30 seconds); ${scanProgress(job)}.`
+            ? `Cancelling — finishing the batches being read (a few seconds); ${scanProgress(job)}.`
             : `Scanning ${job.directory} — ${scanProgress(job)}.`);
           await new Promise(resolve => setTimeout(resolve, 1000));
           continue;
@@ -699,6 +2153,9 @@
       }
       currentPage = 1;
       await loadRecords();
+      unprocessedPage = 1;
+      reloadUnprocessed();
+      if (document.querySelector("#compare-panel").open) compareAgain();   // the records changed
     } catch (error) {
       showMessage(error.message, "error");
     } finally {
@@ -735,7 +2192,7 @@
     if (activeJobId === null) return;
     cancelButton.disabled = true;
     cancelling = true;
-    showMessage("Cancelling — finishing the batch being read (up to about 30 seconds).");
+    showMessage("Cancelling — finishing the batches being read (a few seconds).");
     try {
       const response = await fetch(`/api/scans/${activeJobId}/cancel`, { method: "POST" });
       if (!response.ok) throw new Error((await response.json()).error || "Could not cancel the scan.");
@@ -751,8 +2208,7 @@
     if (data.job && data.job.status === "scanning") monitorScan(data.job.id);
   }).catch(() => {});
 
-  document.querySelector("#duplicates-button").addEventListener("click", async () => {
-    const button = document.querySelector("#duplicates-button");
+  async function flagDuplicates(button) {
     button.disabled = true;
     try {
       const response = await fetch("/api/duplicates", { method: "POST" });
@@ -760,12 +2216,15 @@
       if (!response.ok) throw new Error(data.error || "Could not flag duplicates.");
       showMessage(`${data.duplicates_flagged} duplicate records flagged.`, "success");
       await loadRecords();
+      duplicatesPage = 1;
+      reloadDuplicates();
     } catch (error) {
       showMessage(error.message, "error");
     } finally {
       button.disabled = false;
     }
-  });
+  }
+  document.querySelector("#duplicates-button").addEventListener("click", event => flagDuplicates(event.currentTarget));
 
   document.querySelector("#previous-button").addEventListener("click", async () => {
     currentPage = Math.max(1, currentPage - 1);

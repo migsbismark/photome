@@ -7,3 +7,4 @@ node_modules
 instance
 *.sqlite3
 .photome-extra.yml
+.photome-mounts
